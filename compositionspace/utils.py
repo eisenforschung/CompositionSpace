@@ -18,3 +18,7 @@ def floor_to_multiple(number, multiple):
 
 def get_file_size(file_path: str = ""):
     print(f"{np.around(os.path.getsize(file_path)/1024/1024, decimals=3)} MiB")
+
+
+# numerics
+EPSILON = 1.e-6

@@ -5,7 +5,6 @@ import numpy as np
 import h5py
 import datetime as dt
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
-from compositionspace.get_gitrepo_commit import get_repo_last_commit
 from compositionspace.utils import floor_to_multiple, ceil_to_multiple
 
 # https://stackoverflow.com/questions/47182183/pandas-chained-assignment-warning-exception-handling

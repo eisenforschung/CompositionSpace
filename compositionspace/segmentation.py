@@ -1,3 +1,4 @@
+import os
 from compositionspace.ml_models import get_model
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
@@ -6,254 +7,146 @@ import numpy as np
 import pandas as pd
 import matplotlib.pylab as plt
 from tqdm.notebook import tqdm
-import os
+from compositionspace.get_gitrepo_commit import get_repo_last_commit
 from pyevtk.hl import pointsToVTK
 # from pyevtk.hl import gridToVTK  # pointsToVTKAsTIN
 import yaml
 import pyvista as pv
+from compositionspace.utils import EPSILON
 
 
 class ProcessSegmentation():
-    def __init__(self, inputfile):
-        if isinstance(inputfile, dict):
-            self.params = inputfile
-        else:
-            with open(inputfile, "r") as fin:
-                params = yaml.safe_load(fin)
-            self.params = params
-        self.version = "1.0.0"
+    def __init__(self, 
+                 config_file_path: str = "", 
+                 results_file_path: str = "",
+                 entry_id: int = 1,
+                 verbose: bool = False):
+        # why should inputfile be a dictionary, better always document changes made in file
+        self.config = {}
+        with open(config_file_path, "r") as yml:
+            self.config = yaml.safe_load(yml)  # TODO try, except
+        self.config["config_file_path"] = config_file_path
+        self.config["results_file_path"] = results_file_path
+        self.config["entry_id"] = entry_id
+        self.verbose = verbose
+        self.version = get_repo_last_commit()
+        # if not os.path.exists(self.config['output_path']):
+        #     os.mkdir(self.config['output_path'])
+        self.n_itypes = 0
+        self.composition_matrix = None
+        self.X_train = None
 
-    def get_PCA_cumsum(self, vox_ratio_file, vox_file):
-        with h5py.File(vox_file,"r") as hdf:
-            group = hdf.get("Group_sm_vox_xyz_Da_spec")
-            group0 = hdf.get("0")
-            spec_lst = list(list(group0.attrs.values())[1])
+    def get_composition_matrix(self):
+        self.composition_matrix = None
+        with h5py.File(self.config["results_file_path"], "r") as h5r:
+            src = f"/entry1/voxelization"
+            total_weights = h5r[f"{src}/total"][:]
+            self.n_itypes = 73  # TODO::fish from h5r
 
-        with h5py.File(vox_ratio_file , "r") as hdfr:
-            ratios = np.array(hdfr.get("vox_ratios"))
-            ratios_columns = list(list(hdfr.attrs.values())[0])
-            group_name = list(list(hdfr.attrs.values())[1])
+            self.composition_matrix = np.zeros([np.shape(total_weights)[0], self.n_itypes], np.float64)
+            for ityp in np.arange(0, self.n_itypes):
+                ityp_weights = h5r[f"{src}/ion{ityp}/weight"][:]
+                if np.shape(ityp_weights) == np.shape(total_weights):
+                    self.composition_matrix[:, ityp] = np.divide(ityp_weights, total_weights, where= total_weights >= EPSILON)
+                    self.composition_matrix[np.where(self.composition_matrix[:, ityp] < EPSILON), ityp] = 0.
+                    self.composition_matrix[np.isnan(self.composition_matrix[:, ityp]), ityp] = 0.
+                else:
+                    raise ValueError(f"Length of iontype-specific and total weight arrays for ityp {ityp} needs to be the same!")
 
-        print(len(ratios))
-        print((ratios_columns))
+    def perform_pca_and_write_results(self):
+        self.get_composition_matrix()
 
-        ratios = pd.DataFrame(data=ratios, columns=ratios_columns)
-
-        X_train=ratios.drop(['Total_no','vox'], axis=1)
-        PCAObj = PCA(n_components = len(spec_lst))
-        PCATrans = PCAObj.fit_transform(X_train)
+        self.X_train = None
+        self.X_train = self.composition_matrix
+        PCAObj = PCA(n_components = self.n_itypes)
+        PCATrans = PCAObj.fit_transform(self.X_train)
         PCACumsumArr = np.cumsum(PCAObj.explained_variance_ratio_)
 
-        plt.figure(figsize=(5,5))
-        plt.plot( range(1,len(PCACumsumArr)+1,1),PCACumsumArr,"-o")
-        plt.ylabel("Explained Variance")
-        plt.xlabel('Dimensions')
-        plt.grid()
-        output_path = os.path.join(self.params["output_path"], "PCA_cumsum.png")
-        plt.savefig(output_path)
-        plt.show()
+        with h5py.File(self.config["results_file_path"], "a") as h5w:
+            trg = f"/entry{self.config['entry_id']}/segmentation"
+            grp = h5w.create_group(trg)
+            grp.attrs["NX_class"] = "NXobject"  # TODO
+            trg = f"/entry{self.config['entry_id']}/segmentation/pca"
+            grp = h5w.create_group(trg)
+            grp.attrs["NX_class"] = "NXprocess"
+            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(2))
+            trg = f"/entry{self.config['entry_id']}/segmentation/pca/result"
+            grp = h5w.create_group(trg)
+            grp.attrs["NX_class"] = "NXdata"
+            grp.attrs["axes"] = "axis_pca_dimension"
+            grp.attrs["axis_pca_dimension"] = np.uint64(0)
+            grp.attrs["signal"] = "axis_explained_variance"
+            # further attributes, to render it a proper NeXus NXdata object
+            axis_dim = np.asarray(np.linspace(0, self.n_itypes - 1, num=self.n_itypes, endpoint=True), np.uint32)
+            dst = h5w.create_dataset(f"{trg}/axis_pca_dimension", compression="gzip", compression_opts=1, data=axis_dim)
+            dst.attrs["long_name"] = "Dimension"
+            axis_expl_var = np.asarray(PCACumsumArr, np.float64)
+            dst = h5w.create_dataset(f"{trg}/axis_explained_variance", compression="gzip", compression_opts=1, data=axis_expl_var)
+            dst.attrs["long_name"] = "Explained variance"
 
-        return PCACumsumArr, ratios
+    def perform_bics_minimization_and_write_results(self):
+        self.get_composition_matrix()
 
-    def get_bics_minimization(self, vox_ratio_file, vox_file):
-        with h5py.File(vox_file,"r") as hdf:
-            group = hdf.get("Group_sm_vox_xyz_Da_spec")
-            group0 = hdf.get("0")
-            spec_lst = list(list(group0.attrs.values())[2])
+        with h5py.File(self.config["results_file_path"], "a") as h5w:
+            trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt"  # information criterion optimization (minimization)
+            grp = h5w.create_group(trg)
+            grp.attrs["NX_class"] = "NXprocess"
+            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(3))
 
-        with h5py.File(vox_ratio_file , "r") as hdfr:
-            ratios = np.array(hdfr.get("vox_ratios"))
-            ratios_columns = list(list(hdfr.attrs.values())[0])
-            group_name = list(list(hdfr.attrs.values())[1])
+        # gm_scores = []
+        aics = []
+        bics = []  # y_pred are stored directly into the HDF5 file
+        n_clusters_queue = list(range(1, self.config["bics_clusters"] + 1))
+        identifier = 1
+        for n_cluster in n_clusters_queue:
+            # why does the following result look entirely different by orders of magnitude if you change range to np.arange and drop the list creation?
+            # floating point versus integer numbers, this needs to be checked !!!
+            # again !!! even though now we are using list and range again the result appear random!!!???
+            # run sequentially first to assure
+            print(f"GaussianMixture ML analysis with n_cluster {int(n_cluster)}")
+            gm = GaussianMixture(n_components=int(n_cluster), verbose=0)
+            gm.fit(self.X_train)
+            y_pred = gm.predict(self.composition_matrix)
+            # gm_scores.append(homogeneity_score(y, y_pred))
+            aics.append(gm.aic(self.composition_matrix))
+            bics.append(gm.bic(self.composition_matrix))
 
-        ratios = pd.DataFrame(data=ratios, columns=ratios_columns)
+            with h5py.File(self.config["results_file_path"], "a") as h5w:
+                trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{identifier}"
+                grp = h5w.create_group(trg)
+                grp.attrs["NX_class"] = "NXprocess"
+                dst = h5w.create_dataset(f"{trg}/n_cluster", data=np.uint32(n_cluster))
+                dst = h5w.create_dataset(f"{trg}/y_pred", compression="gzip", compression_opts=1, data=np.asarray(y_pred, np.uint32))
+            identifier += 1
+        # all clusters processed TODO: take advantage of trivial parallelism here
 
-        gm_scores=[]
-        aics=[]
-        bics=[]
+        with h5py.File(self.config["results_file_path"], "a") as h5w:
+            trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt/summary"
+            grp = h5w.create_group(trg)
+            grp.attrs["NX_class"] = "NXdata"
+            grp.attrs["axes"] = "axis_dimension"
+            grp.attrs["axis_dimension"] = np.uint64(0)
+            # grp.attrs["signal"] = "axis_aic"  # Akaike information criterion
+            grp.attrs["signal"] = "axis_bic"  # Bayes information criterion
+            grp.attrs["auxiliary_signals"] = ["axis_aic"]
+            dst = h5w.create_dataset(f"{trg}/title", data="Information criterion minimization")
 
-        X_train=ratios.drop(['Total_no','vox'], axis=1)
+            # further attributes to render it a proper NeXus NXdata object
+            axis_dim = np.asarray(np.linspace(1, self.config["bics_clusters"], num=self.config["bics_clusters"], endpoint=True), np.uint32)
+            dst = h5w.create_dataset(f"{trg}/axis_dimension", compression="gzip", compression_opts=1, data=axis_dim)
+            dst.attrs["long_name"] = "Number of cluster"
+            # dst.attrs["units"] = "1"
+            axis_aic = np.asarray(aics, np.float64)
+            dst = h5w.create_dataset(f"{trg}/axis_aic", compression="gzip", compression_opts=1, data=axis_aic)
+            # dst.attrs["long_name"] = "Akaike information criterion"
+            # dst.attrs["units"] = ""  # is NX_DIMENSIONLESS
+            axis_bic = np.asarray(bics, np.float64)
+            dst = h5w.create_dataset(f"{trg}/axis_bic", compression="gzip", compression_opts=1, data=axis_bic)
+            dst.attrs["long_name"] = "Information criterion value"  # "Bayes information criterion"
+            # dst.attrs["units"] = ""  # is NX_DIMENSIONLESS
 
-        n_clusters=list(range(1,self.params["bics_clusters"]))
+    def run(self):
+        self.perform_pca_and_write_results()
+        self.perform_bics_minimization_and_write_results()
 
-        pbar = tqdm(n_clusters, desc="Clustering")
-        for n_cluster in pbar:
-            gm = GaussianMixture(n_components=n_cluster,verbose=0)
-            gm.fit(X_train)
-            y_pred=gm.predict(X_train)
-            #gm_scores.append(homogeneity_score(y,y_pred))
-            aics.append(gm.aic(X_train))
-            bics.append(gm.bic(X_train))
-
-        output_path = os.path.join(self.params["output_path"], "bics_aics.png")
-        plt.plot(n_clusters, aics, "-o",label="AIC")
-        plt.plot(n_clusters, bics, "-o",label="BIC")
-        plt.legend()
-        plt.savefig(output_path)
-        plt.show()
-        return self.params["bics_clusters"], aics, bics
-
-    def calculate_centroid(self, data):
-        """
-        Calculate centroid
-        Parameters
-        ----------
-        data: pandas DataFrame or numpy array
-        Returns
-        -------
-        centroid
-        """
-        if isinstance(data, pd.DataFrame):
-            length = len(data['x'])
-            sum_x = np.sum(data['x'])
-            sum_y = np.sum(data['y'])
-            sum_z = np.sum(data['z'])
-            return sum_x/length, sum_y/length, sum_z/length
-        else:
-            length = len(data[:,0])
-            sum_x = np.sum(data[:,0])
-            sum_y = np.sum(data[:,1])
-            sum_z = np.sum(data[:,2])
-            return sum_x/length, sum_y/length, sum_z/length
-
-    def get_voxel_centroid(self, vox_file, files_arr):
-        with h5py.File(vox_file, "r") as hdf:
-            items = list(hdf.items())
-            item_lst = []
-            for item in range(len(items)):
-                item_lst.append([100000*(item),100000*(item+1)])
-            item_lst = np.array(item_lst)
-
-            dic_centroids = {}
-            dic_centroids["x"]=[]
-            dic_centroids["y"]=[]
-            dic_centroids["z"] = []
-            dic_centroids["file_name"] = []
-            df_centroids = pd.DataFrame(columns=['x', 'y', 'z','filename'])
-
-            for filename in files_arr:
-                group = np.min(item_lst[[filename in range(j[0],j[1]) for j in item_lst]])
-                xyz_Da_spec_atoms = np.array(hdf.get("{}/{}".format(group, filename)))
-                x, y, z = self.calculate_centroid(xyz_Da_spec_atoms)
-                dic_centroids["x"].append(x)
-                dic_centroids["y"].append(y)
-                dic_centroids["z"].append(z)
-                dic_centroids["file_name"].append(filename)
-        return dic_centroids
-
-    def get_composition_cluster_files(self, vox_ratio_file, vox_file, n_components):
-        ml_params = self.params["ml_models"]
-
-        with h5py.File(vox_file,"r") as hdf:
-            group = hdf.get("Group_sm_vox_xyz_Da_spec")
-            group0 = hdf.get("0")
-            spec_lst = list(list(group0.attrs.values())[2])
-
-        with h5py.File(vox_ratio_file , "r") as hdfr:
-            ratios = np.array(hdfr.get("vox_ratios"))
-            ratios_columns = list(list(hdfr.attrs.values())[0])
-            group_name = list(list(hdfr.attrs.values())[1])
-
-        ratios = pd.DataFrame(data=ratios, columns=ratios_columns)
-        print(f"ratios {ratios}")
-
-        X_train=ratios.drop(['Total_no','vox'], axis=1)
-
-        gm = get_model(ml_params=ml_params)
-        gm.fit(X_train)
-        y_pred=gm.predict(X_train)
-
-        cluster_lst = []
-        for phase in range(n_components):
-            cluster_lst.append(np.argwhere(y_pred == phase).flatten())
-        df_lst = []
-        for cluster in cluster_lst:
-            df_lst.append(ratios.iloc[cluster])
-
-        #sorting
-        cluster_lst_sort = []
-        len_arr = np.array([len(x) for x in cluster_lst])
-        sorted_len_arr = np.sort(len_arr)
-        for length in sorted_len_arr:
-            cluster_lst_sort.append(cluster_lst[np.argwhere(len_arr == length)[0,0]])
-
-        #print([len(x) for x in cluster_lst_sort])
-        cluster_lst = cluster_lst_sort
-
-        return cluster_lst, ratios
-
-    def get_composition_clusters(self, vox_ratio_file, vox_file, outfile="vox_centroid_file.h5"):
-        voxel_centroid_output_file = []
-        n_components = self.params["n_phases"]
-        ml_params = self.params["ml_models"]
-        cluster_lst, ratios = self.get_composition_cluster_files(vox_ratio_file, vox_file, n_components)
-
-        plot_files = []
-        for phase in range(len(cluster_lst)):
-            cluster_files = []
-            cluster = cluster_lst[phase]
-            for voxel_id in cluster:
-                cluster_files.append(ratios['vox'][voxel_id])
-            plot_files.append(cluster_files)
-
-        plot_files_group = []
-        for cluster_files in plot_files:
-            plot_files_group.append([int(file_num) for file_num in cluster_files ])
-
-        with h5py.File(vox_file,"r") as hdf_sm_r:
-            hdf_sm_r = h5py.File(vox_file,"r")
-            group = hdf_sm_r.get("0")
-            #total_voxels =list(list(group.attrs.values())[0])
-            total_voxels =list(list(group.attrs.values())[2])
-
-            total_voxels_int =""
-            for number in total_voxels:
-                total_voxels_int = total_voxels_int + number
-
-            total_voxels_int = int(total_voxels_int)
-            hdf_sm_r.close()
-            plot_files_cl_All_group = [file_num for file_num in range(total_voxels_int)]
-
-        plot_files_group.append(plot_files_cl_All_group)
-        output_path = os.path.join(self.params["output_path"], outfile)
-        with h5py.File(output_path,"w") as hdfw:
-            for cluster_file_id in range(len(plot_files_group)):
-
-                G = hdfw.create_group(f"{cluster_file_id}")
-                G.attrs["what"] = ["Centroid of voxels"]
-                G.attrs["howto_Group_name"] = ["Group_sm_vox_xyz_Da_spec/"]
-                G.attrs["colomns"] = ["x","y","z","file_name"]
-
-                CentroidsDic = self.get_voxel_centroid(vox_file, plot_files_group[cluster_file_id])
-                G.create_dataset(f"{cluster_file_id}", data = pd.DataFrame.from_dict(CentroidsDic).values)
-
-        self.voxel_centroid_output_file = output_path
-
-    def generate_plots(self):
-        vtk_files = []
-        with h5py.File(self.voxel_centroid_output_file, "r") as hdfr:
-            groups =list(hdfr.keys())
-            for group in range(len(groups)-1):
-                phase_arr =  np.array(hdfr.get(f"{group}/{group}"))
-                phase_columns = list(list(hdfr.get(f"{group}").attrs.values())[0])
-                phase_cent_df =pd.DataFrame(data=phase_arr, columns=phase_columns)
-
-                image = phase_cent_df.values
-
-                file_path = self.voxel_centroid_output_file + f"_{group}"
-
-                vtk_files.append(file_path + ".vtu")
-
-                x = np.ascontiguousarray(image[:,0])
-                y= np.ascontiguousarray(image[:,1])
-                z = np.ascontiguousarray(image[:,2])
-                label = np.ascontiguousarray( image[:,3])
-
-                pointsToVTK(file_path, x, y, z, data = {"label" : label}  )
-        self.vtk_files = vtk_files
-
-    def plot3d(self, **kwargs):
-        self.generate_plots()
-        for file in self.vtk_files:
-            grid = pv.read(file)
-            grid.plot(**kwargs, jupyter_backend="panel")
+    # inspect version prior nexus-io feature branch was merged for generate_plots and plot3d

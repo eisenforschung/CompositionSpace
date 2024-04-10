@@ -2,7 +2,7 @@ input_path: tests/data
 output_path: tests/output
 n_big_slices: 10
 voxel_size: 2
-bics_clusters: 10
+bics_clusters: 5
 n_phases: 2
 # some additional fields and groups in experiment_params.json
 # but this seems to be from another example
