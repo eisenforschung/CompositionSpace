@@ -24,7 +24,6 @@ class ProcessSegmentation():
         self.version = "1.0.0"
 
     def get_PCA_cumsum(self, vox_ratio_file, vox_file):
-
         with h5py.File(vox_file,"r") as hdf:
             group = hdf.get("Group_sm_vox_xyz_Da_spec")
             group0 = hdf.get("0")
