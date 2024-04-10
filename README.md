@@ -4,7 +4,16 @@ CompositionSpace is a python library for analysis of APT data.
 
 ## Installation
 
-### Installation using pip
+### Installation for developers on your local machine in a virtual environment:
+```
+git clone https://github.com/eisenforschung/CompositionSpace
+cd CompositionSpace
+git checkout nexus-io
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+```
+
+### Installation for users via [PyPI](https://pypi.org/)
 
 Compositionspace can be installed using:
 
@@ -12,7 +21,7 @@ Compositionspace can be installed using:
 pip install compositionspace
 ```
 
-### Installation using [Conda](https://anaconda.org/)
+### Installation for users via [Conda](https://anaconda.org/)
 
 It is **strongly** recommended to install and use `calphy` within a conda environment. To see how you can install conda see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
 
