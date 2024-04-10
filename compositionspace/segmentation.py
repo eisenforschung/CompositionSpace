@@ -1,8 +1,6 @@
-from compositionspace.datautils import DataPreparation
-from compositionspace.models import get_model
+from compositionspace.ml_models import get_model
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
-import json
 import h5py
 import numpy as np
 import pandas as pd
@@ -10,12 +8,12 @@ import matplotlib.pylab as plt
 from tqdm.notebook import tqdm
 import os
 from pyevtk.hl import pointsToVTK
-from pyevtk.hl import gridToVTK#, pointsToVTKAsTIN
+# from pyevtk.hl import gridToVTK  # pointsToVTKAsTIN
 import yaml
 import pyvista as pv
 
-class CompositionClustering():
 
+class ProcessSegmentation():
     def __init__(self, inputfile):
         if isinstance(inputfile, dict):
             self.params = inputfile
@@ -58,10 +56,7 @@ class CompositionClustering():
 
         return PCACumsumArr, ratios
 
-
-
     def get_bics_minimization(self, vox_ratio_file, vox_file):
-
         with h5py.File(vox_file,"r") as hdf:
             group = hdf.get("Group_sm_vox_xyz_Da_spec")
             group0 = hdf.get("0")
@@ -99,7 +94,6 @@ class CompositionClustering():
         plt.show()
         return self.params["bics_clusters"], aics, bics
 
-
     def calculate_centroid(self, data):
         """
         Calculate centroid
@@ -123,10 +117,7 @@ class CompositionClustering():
             sum_z = np.sum(data[:,2])
             return sum_x/length, sum_y/length, sum_z/length
 
-
-
     def get_voxel_centroid(self, vox_file, files_arr):
-
         with h5py.File(vox_file, "r") as hdf:
             items = list(hdf.items())
             item_lst = []
@@ -151,9 +142,7 @@ class CompositionClustering():
                 dic_centroids["file_name"].append(filename)
         return dic_centroids
 
-
     def get_composition_cluster_files(self, vox_ratio_file, vox_file, n_components):
-
         ml_params = self.params["ml_models"]
 
         with h5py.File(vox_file,"r") as hdf:
@@ -241,9 +230,7 @@ class CompositionClustering():
 
         self.voxel_centroid_output_file = output_path
 
-
     def generate_plots(self):
-
         vtk_files = []
         with h5py.File(self.voxel_centroid_output_file, "r") as hdfr:
             groups =list(hdfr.keys())
@@ -266,12 +253,8 @@ class CompositionClustering():
                 pointsToVTK(file_path, x, y, z, data = {"label" : label}  )
         self.vtk_files = vtk_files
 
-
     def plot3d(self, **kwargs):
         self.generate_plots()
         for file in self.vtk_files:
             grid = pv.read(file)
             grid.plot(**kwargs, jupyter_backend="panel")
-
-
-

@@ -3,14 +3,13 @@ import os
 from tqdm.notebook import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
-import h5py    
+import h5py
 from sklearn.cluster import DBSCAN
 from pyevtk.hl import pointsToVTK
-from pyevtk.hl import gridToVTK
+# from pyevtk.hl import gridToVTK
 import yaml
 
-class DataPostprocess:
-    
+class ProcessClustering:
     def __init__(self, inputfile):
         if isinstance(inputfile, dict):
             self.params = inputfile
@@ -53,7 +52,6 @@ class DataPostprocess:
 
         return Df_centroids_no_files, Df_centroids, Phase_columns
 
-        
     def DBSCAN_clustering(self, voxel_centroid_phases_files, cluster_id, 
         plot= False, plot3d = False, save =False):
         """
@@ -132,9 +130,3 @@ class DataPostprocess:
                         cl_idx =np.argwhere(labels==i).flatten()
                         cl_cent=Df_centroids.iloc[cl_idx]
                         G.create_dataset("{}".format(i), data = cl_cent.values)
-
-
-    
-
-
- 
