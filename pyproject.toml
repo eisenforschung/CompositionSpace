@@ -22,6 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "ifes_apt_tc_data_modeling>=0.2.1",
     "numpy",
     "matplotlib",
     "pandas",
@@ -52,6 +53,9 @@ dev = [
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"
 local_scheme = "node-and-date"
+
+[tool.setuptools.packages.find]
+include = ["compositionspace/*"]
 
 [tool.ruff]
 include = ["compositionspace/*.py", "tests/*.py"]

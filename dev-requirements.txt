@@ -14,6 +14,8 @@ argon2-cffi-bindings==21.2.0
     # via argon2-cffi
 arrow==1.3.0
     # via isoduration
+ase==3.22.1
+    # via ifes-apt-tc-data-modeling
 asttokens==2.4.1
     # via stack-data
 async-lru==2.0.4
@@ -28,6 +30,8 @@ beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.1.0
     # via nbconvert
+blosc2==2.6.2
+    # via tables
 build==1.2.1
     # via pip-tools
 certifi==2024.2.2
@@ -61,6 +65,8 @@ executing==2.0.1
     # via stack-data
 fastjsonschema==2.19.1
     # via nbformat
+flatdict==4.0.1
+    # via ifes-apt-tc-data-modeling
 fonttools==4.51.0
     # via matplotlib
 fqdn==1.5.1
@@ -73,6 +79,7 @@ h5py==3.11.0
     # via
     #   compositionspace (pyproject.toml)
     #   h5grove
+    #   ifes-apt-tc-data-modeling
     #   jupyterlab-h5web
 httpcore==1.0.5
     # via httpx
@@ -84,6 +91,8 @@ idna==3.6
     #   httpx
     #   jsonschema
     #   requests
+ifes-apt-tc-data-modeling==0.2.1
+    # via compositionspace (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.4
@@ -180,8 +189,10 @@ markupsafe==2.1.5
     #   nbconvert
 matplotlib==3.8.4
     # via
+    #   ase
     #   compositionspace (pyproject.toml)
     #   pyvista
+    #   radioactivedecay
     #   vtk
 matplotlib-inline==0.1.6
     # via
@@ -189,6 +200,10 @@ matplotlib-inline==0.1.6
     #   ipython
 mistune==3.0.2
     # via nbconvert
+mpmath==1.3.0
+    # via sympy
+msgpack==1.0.8
+    # via blosc2
 mypy==1.9.0
     # via compositionspace (pyproject.toml)
 mypy-extensions==1.0.0
@@ -204,26 +219,40 @@ nbformat==5.10.4
     #   jupyter-server
     #   nbclient
     #   nbconvert
+ndindex==1.8
+    # via blosc2
 nest-asyncio==1.6.0
     # via ipykernel
+networkx==3.3
+    # via radioactivedecay
 notebook==7.1.2
     # via jupyter
 notebook-shim==0.2.4
     # via
     #   jupyterlab
     #   notebook
+numexpr==2.10.0
+    # via
+    #   blosc2
+    #   tables
 numpy==1.26.4
     # via
+    #   ase
+    #   blosc2
     #   compositionspace (pyproject.toml)
     #   contourpy
     #   h5grove
     #   h5py
+    #   ifes-apt-tc-data-modeling
     #   matplotlib
+    #   numexpr
     #   pandas
     #   pyevtk
     #   pyvista
+    #   radioactivedecay
     #   scikit-learn
     #   scipy
+    #   tables
     #   tifffile
 orjson==3.10.0
     # via h5grove
@@ -242,8 +271,11 @@ packaging==24.0
     #   pytest
     #   qtconsole
     #   qtpy
+    #   tables
 pandas==2.2.1
-    # via compositionspace (pyproject.toml)
+    # via
+    #   compositionspace (pyproject.toml)
+    #   ifes-apt-tc-data-modeling
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
@@ -278,6 +310,10 @@ ptyprocess==0.7.0
     #   terminado
 pure-eval==0.2.2
     # via stack-data
+py-cpuinfo==9.0.0
+    # via
+    #   blosc2
+    #   tables
 pycparser==2.22
     # via cffi
 pyevtk==1.6.0
@@ -330,6 +366,8 @@ qtconsole==5.5.1
     # via jupyter
 qtpy==2.4.1
     # via qtconsole
+radioactivedecay==0.4.22
+    # via ifes-apt-tc-data-modeling
 referencing==0.34.0
     # via
     #   jsonschema
@@ -356,7 +394,10 @@ ruff==0.3.5
 scikit-learn==1.4.2
     # via compositionspace (pyproject.toml)
 scipy==1.13.0
-    # via scikit-learn
+    # via
+    #   ase
+    #   radioactivedecay
+    #   scikit-learn
 scooby==0.9.2
     # via pyvista
 send2trash==1.8.3
@@ -375,6 +416,10 @@ soupsieve==2.5
     # via beautifulsoup4
 stack-data==0.6.3
     # via ipython
+sympy==1.12
+    # via radioactivedecay
+tables==3.9.2
+    # via ifes-apt-tc-data-modeling
 terminado==0.18.1
     # via
     #   jupyter-server
@@ -441,6 +486,8 @@ wheel==0.43.0
     # via pip-tools
 widgetsnbextension==4.0.10
     # via ipywidgets
+xmltodict==0.13.0
+    # via ifes-apt-tc-data-modeling
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
