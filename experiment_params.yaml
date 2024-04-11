@@ -1,0 +1,18 @@
+input_path: tests/data
+output_path: tests/output
+n_big_slices: 10
+voxel_size: 1  # 0.5
+bics_clusters: 5
+n_phases: 5
+ml_models:
+   name: GaussianMixture 
+   GaussianMixture:
+      n_components: 2
+      max_iter: 100000
+      verbose: 0
+   RandomForest:
+      max_depth: 0
+      n_estimators: 0
+   DBScan:
+      eps: 3
+      min_samples: 5

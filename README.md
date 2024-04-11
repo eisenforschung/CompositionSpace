@@ -4,7 +4,7 @@ CompositionSpace is a python library for analysis of APT data.
 
 ## Installation
 
-### Installation for developers on your local machine in a virtual environment:
+### Installation for developers on your local machine into a virtual environment:
 ```
 git clone https://github.com/eisenforschung/CompositionSpace
 cd CompositionSpace
