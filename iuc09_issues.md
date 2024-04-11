@@ -1,7 +1,0 @@
-- [ ] Tests are too specific, hardcoded file names
-- [ ] Readthedocs documentation not building
-- [ ] loading file formats from the community should use ifes-apt-tc-data-modeling library
-- [ ] ion handling should use ifes-apt-tc-data-modeling lib
-- [ ] tests/experiment_params.json should be removed?
-- [ ] tests/experiment_params.yaml should be documented every single quantity
-- [ ] CompostionSpace by design does not distinguish charge states
