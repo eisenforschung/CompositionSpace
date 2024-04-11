@@ -39,7 +39,7 @@ class ProcessSegmentation():
     def get_composition_matrix(self):
         self.composition_matrix = None
         with h5py.File(self.config["results_file_path"], "r") as h5r:
-            src = f"/entry1/voxelization"
+            src = f"/entry{self.config['entry_id']}/voxelization"
             total_weights = h5r[f"{src}/total"][:]
             self.n_itypes = 73  # TODO::fish from h5r
 

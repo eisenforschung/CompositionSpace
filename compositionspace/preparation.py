@@ -15,6 +15,7 @@ class ProcessPreparation:
     def __init__(self, 
                  config_file_path: str = "", 
                  results_file_path: str = "",
+                 entry_id: int = 1,
                  verbose: bool = False):
         # why should inputfile be a dictionary, better always document changes made in file
         self.config = {}
@@ -22,6 +23,7 @@ class ProcessPreparation:
             self.config = yaml.safe_load(yml)  # TODO try, except
         self.config["config_file_path"] = config_file_path
         self.config["results_file_path"] = results_file_path
+        self.config["entry_id"] = entry_id
         self.verbose = verbose
         self.version = get_repo_last_commit()
         # if not os.path.exists(self.config['output_path']):
@@ -44,11 +46,11 @@ class ProcessPreparation:
             h5w.attrs["HDF5_version"] = ".".join(map(str, h5py.h5.get_libversion()))
             h5w.attrs["h5py_version"] = h5py.__version__
 
-            trg = "/entry1"
+            trg = f"/entry{self.config['entry_id']}"
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXentry"
             dst = h5w.create_dataset(f"{trg}/definition", data="NXapm_compositionspace_results")
-            trg = "/entry1/program"
+            trg = f"/entry{self.config['entry_id']}/program"
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXprogram"
             dst = h5w.create_dataset(f"{trg}/program", data="compositionspace")
@@ -111,12 +113,12 @@ class ProcessPreparation:
             raise LookupError(f"Results file {self.config['results_file_path']} has not been instantiated!")
 
         with h5py.File(self.config["results_file_path"], "a") as h5w:
-            trg = "/entry1/voxelization"
+            trg = f"/entry{self.config['entry_id']}/voxelization"
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXprocess"
             dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(1))
 
-            trg = "/entry1/voxelization/cg_grid"
+            trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXcg_grid"
             dst = h5w.create_dataset(f"{trg}/dimensionality", data=np.uint64(3))
@@ -158,14 +160,15 @@ class ProcessPreparation:
 
     def write_voxelization_results(self, ityp_info: dict):
         with h5py.File(self.config["results_file_path"], "a") as h5w:
-            trg = "/entry1/voxelization/cg_grid"
+            trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
             dst = h5w.create_dataset(f"{trg}/voxel_identifier", compression="gzip", compression_opts=1, data=self.voxel_identifier)
 
             c = np.prod(self.extent)
-            print(f"cardinality {c}")
+            print(f"")
             # now just add weight/counts for a the iontype-specific part of the lookup-table
-            print(f"means we have to visit so that many entries in the lookup table {np.sum(self.lu_ityp_voxel_id_evap_id['iontype'] == 0)}")
-            print(f"but by virtue of construction of the lookup table all the indices will be close in cache")
+            print(f"Cardinality is {c} means we have to visit so that many entries in the lookup table "
+                  f"{np.sum(self.lu_ityp_voxel_id_evap_id['iontype'] == 0)} but by virtue of construction "
+                  f"of the lookup table all the indices will be close in cache.")
             total_weights = np.zeros(c, np.float64)
             for ityp in np.arange(0, len(ityp_info)):
                 inds = np.argwhere(self.lu_ityp_voxel_id_evap_id["iontype"] == ityp)
@@ -182,7 +185,7 @@ class ProcessPreparation:
                 # print(f"ityp {ityp}, np.sum(ityp_weights) {np.sum(ityp_weights)}")
                 
                 # atom/molecular ion-type-specific contribution/intensity/count in each voxel/cell
-                trg = f"/entry1/voxelization/ion{ityp}"
+                trg = f"/entry{self.config['entry_id']}/voxelization/ion{ityp}"
                 grp = h5w.create_group(f"{trg}")
                 grp.attrs["NX_class"] = "NXion"
                 dst = h5w.create_dataset(f"{trg}/name", data=ityp_info[f"ion{ityp}"][0])
@@ -194,7 +197,7 @@ class ProcessPreparation:
             print(f"cardinality of cg_grid {c}, n_ions {self.n_ions}")
 
             # total atom/molecular ion contribution/intensity/count in each voxel/cell
-            trg = f"/entry1/voxelization"
+            trg = f"/entry{self.config['entry_id']}/voxelization"
             dst = h5w.create_dataset(f"{trg}/total", compression="gzip", compression_opts=1, data=total_weights)
             dst.attrs["units"] = "a.u."
 
