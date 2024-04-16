@@ -12,3 +12,7 @@ traj.*
 *.sub*
 *.dat
 *log*
+*.h5
+*.nxs
+*.vtu
+*.png
