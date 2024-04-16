@@ -71,7 +71,7 @@ class ProcessPreparation:
         self.voxel_identifier = np.asarray(np.zeros(n_ions), np.uint32)
         print(f"shape {np.shape(self.voxel_identifier)}")
         # edge length of cubic cells/voxels in nm
-        dedge = self.config["voxel_size"]
+        dedge = self.config["voxel_edge_length"]
         for axis_id in [0, 1, 2]:
             column_name = column_names[axis_id]
             # i = np.asarray(df_lst[0].loc[:, column_name], np.float32)
@@ -127,7 +127,7 @@ class ProcessPreparation:
             dst = h5w.create_dataset(f"{trg}/origin", data=np.asarray([self.aabb3d[0, 0], self.aabb3d[1, 0], self.aabb3d[2, 0]], np.float64))
             dst.attrs["units"] = "nm"
             dst = h5w.create_dataset(f"{trg}/symmetry", data="cubic")
-            dedge = self.config["voxel_size"]
+            dedge = self.config["voxel_edge_length"]
             dst = h5w.create_dataset(f"{trg}/cell_dimensions", data=np.asarray([dedge, dedge, dedge], np.float64))
             dst.attrs["units"] = "nm"
             dst = h5w.create_dataset(f"{trg}/extent", data=np.asarray(self.extent, np.uint32))  # max. 2*32 cells

@@ -22,13 +22,13 @@ class ProcessClustering:
         self.version = get_repo_last_commit()
 
     def run_and_write_results(self):
-        target = self.config["n_phases"]
+        n_ic_cluster = self.config["n_sel_ic_cluster"]
         eps = self.config["ml_models"]["DBScan"]["eps"]
         min_samples = self.config["ml_models"]["DBScan"]["min_samples"]
-        print(f"target {target}, eps {eps} nm, min_samples {min_samples}")
+        print(f"n_ic_cluster {n_ic_cluster}, eps {eps} nm, min_samples {min_samples}")
 
         h5r = h5py.File(self.config["results_file_path"], "r")
-        phase_identifier = h5r[f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{target}/y_pred"][:]
+        phase_identifier = h5r[f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{n_ic_cluster}/y_pred"][:]
         all_vxl_pos = h5r[f"/entry{self.config['entry_id']}/voxelization/cg_grid/position"][:,:]
         print(f"np.shape(all_vxl_pos) {np.shape(all_vxl_pos)} list(set(phase_identifier) {list(set(phase_identifier))}")
         n_max_phase_identifier = np.max(tuple(set(phase_identifier)))

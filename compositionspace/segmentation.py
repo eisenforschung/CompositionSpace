@@ -1,17 +1,9 @@
-import os
-from compositionspace.ml_models import get_model
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 import h5py
 import numpy as np
-import pandas as pd
-import matplotlib.pylab as plt
-from tqdm.notebook import tqdm
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
-from pyevtk.hl import pointsToVTK
-# from pyevtk.hl import gridToVTK  # pointsToVTKAsTIN
 import yaml
-import pyvista as pv
 from compositionspace.utils import EPSILON
 
 
@@ -96,15 +88,14 @@ class ProcessSegmentation():
         # gm_scores = []
         aics = []
         bics = []  # y_pred are stored directly into the HDF5 file
-        n_clusters_queue = list(range(1, self.config["bics_clusters"] + 1))
-        identifier = 1
-        for n_cluster in n_clusters_queue:
+        n_clusters_queue = list(range(1, self.config["n_max_ic"] + 1))
+        for n_bics_cluster in n_clusters_queue:
             # why does the following result look entirely different by orders of magnitude if you change range to np.arange and drop the list creation?
             # floating point versus integer numbers, this needs to be checked !!!
             # again !!! even though now we are using list and range again the result appear random!!!???
             # run sequentially first to assure
-            print(f"GaussianMixture ML analysis with n_cluster {int(n_cluster)}")
-            gm = GaussianMixture(n_components=int(n_cluster), verbose=0)
+            print(f"GaussianMixture ML analysis with n_cluster {int(n_bics_cluster)}")
+            gm = GaussianMixture(n_components=int(n_bics_cluster), verbose=0)
             gm.fit(self.X_train)
             y_pred = gm.predict(self.composition_matrix)
             # gm_scores.append(homogeneity_score(y, y_pred))
@@ -112,12 +103,11 @@ class ProcessSegmentation():
             bics.append(gm.bic(self.composition_matrix))
 
             with h5py.File(self.config["results_file_path"], "a") as h5w:
-                trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{identifier}"
+                trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{n_bics_cluster}"
                 grp = h5w.create_group(trg)
                 grp.attrs["NX_class"] = "NXprocess"
-                dst = h5w.create_dataset(f"{trg}/n_cluster", data=np.uint32(n_cluster))
+                dst = h5w.create_dataset(f"{trg}/n_ic_cluster", data=np.uint32(n_bics_cluster))
                 dst = h5w.create_dataset(f"{trg}/y_pred", compression="gzip", compression_opts=1, data=np.asarray(y_pred, np.uint32))
-            identifier += 1
         # all clusters processed TODO: take advantage of trivial parallelism here
 
         with h5py.File(self.config["results_file_path"], "a") as h5w:
