@@ -88,7 +88,7 @@ class ProcessSegmentation():
         # gm_scores = []
         aics = []
         bics = []  # y_pred are stored directly into the HDF5 file
-        n_clusters_queue = list(range(1, self.config["n_max_ic"] + 1))
+        n_clusters_queue = list(range(1, self.config["n_max_ic_cluster"] + 1))
         for n_bics_cluster in n_clusters_queue:
             # why does the following result look entirely different by orders of magnitude if you change range to np.arange and drop the list creation?
             # floating point versus integer numbers, this needs to be checked !!!
@@ -122,7 +122,7 @@ class ProcessSegmentation():
             dst = h5w.create_dataset(f"{trg}/title", data="Information criterion minimization")
 
             # further attributes to render it a proper NeXus NXdata object
-            axis_dim = np.asarray(np.linspace(1, self.config["bics_clusters"], num=self.config["bics_clusters"], endpoint=True), np.uint32)
+            axis_dim = np.asarray(np.linspace(1, self.config["n_max_ic_cluster"], num=self.config["n_max_ic_cluster"], endpoint=True), np.uint32)
             dst = h5w.create_dataset(f"{trg}/axis_dimension", compression="gzip", compression_opts=1, data=axis_dim)
             dst.attrs["long_name"] = "Number of cluster"
             # dst.attrs["units"] = "1"

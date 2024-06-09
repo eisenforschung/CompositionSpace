@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="2.0">
+  <Domain>
+    <Grid Name="Structured Grid" GridType="Uniform">
+      <Topology TopologyType="3DCORECTMesh" NumberOfElements="92 95 111"/>
+      <Geometry GeometryType="ORIGIN_DXDYDZ">
+        <DataItem Name="Origin" Dimensions="3" NumberType="Float" Precision="4" Format="XML">
+          0 0 0
+        </DataItem>
+        <DataItem Name="Spacing" Dimensions="3" NumberType="Float" Precision="4" Format="XML">
+          2.0 2.0 2.0
+        </DataItem>
+      </Geometry>
+      <Attribute Name="SiGe fourth column values" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="92 95 111" NumberType="UInt" Precision="4" Format="HDF">
+          input.grid.nxs:/grid
+        </DataItem>
+      </Attribute>     
+    </Grid>
+  </Domain>
+</Xdmf>
