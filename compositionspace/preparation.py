@@ -129,23 +129,23 @@ class ProcessPreparation:
             trg = f"/entry{self.config['entry_id']}/voxelization"
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXprocess"
-            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(1))
+            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint32(1))
 
             trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXcg_grid"
-            dst = h5w.create_dataset(f"{trg}/dimensionality", data=np.uint64(3))
+            dst = h5w.create_dataset(f"{trg}/dimensionality", data=np.uint32(3))
             c = np.prod(self.extent)
-            dst = h5w.create_dataset(f"{trg}/cardinality", data=np.uint64(c))
+            dst = h5w.create_dataset(f"{trg}/cardinality", data=np.uint32(c))
             dst = h5w.create_dataset(f"{trg}/origin", data=np.asarray([self.aabb3d[0, 0], self.aabb3d[1, 0], self.aabb3d[2, 0]], np.float64))
             dst.attrs["units"] = "nm"
             dst = h5w.create_dataset(f"{trg}/symmetry", data="cubic")
             dedge = self.config["voxel_edge_length"]
             dst = h5w.create_dataset(f"{trg}/cell_dimensions", data=np.asarray([dedge, dedge, dedge], np.float64))
             dst.attrs["units"] = "nm"
-            dst = h5w.create_dataset(f"{trg}/extent", data=np.asarray(self.extent, APT_UINT))  # max. 2*32 cells
-            identifier_offset = 0
-            dst = h5w.create_dataset(f"{trg}/identifier_offset", data=np.uint64(identifier_offset))  # start counting cells from 0
+            dst = h5w.create_dataset(f"{trg}/extent", data=np.asarray(self.extent, np.uint32))
+            identifier_offset = 0  # we count cells starting from this value
+            dst = h5w.create_dataset(f"{trg}/identifier_offset", data=np.uint64(identifier_offset))
 
             voxel_id = identifier_offset
             position = np.zeros([c, 3], np.float64)
@@ -162,7 +162,7 @@ class ProcessPreparation:
             del position
 
             voxel_id = identifier_offset
-            coordinate = np.zeros([c, 3], APT_UINT)
+            coordinate = np.zeros([c, 3], np.uint32)
             for k in np.arange(0, self.extent[2]):
                 for j in np.arange(0, self.extent[1]):
                     for i in np.arange(0, self.extent[0]):

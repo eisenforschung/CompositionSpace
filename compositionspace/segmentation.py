@@ -47,14 +47,15 @@ class ProcessSegmentation():
                     chem_class_idx = int(grpnm.replace("element", ""))
                     etyp_cnts = np.asarray(h5r[f"{src}/{grpnm}/counts"][:], np.float64)
                     if np.shape(etyp_cnts) == np.shape(total_cnts):
-                        self.composition_matrix[:, chem_class_idx] = np.divide(etyp_cnts, total_cnts, where=total_cnts >= EPSILON)
-                        self.composition_matrix[np.where(self.composition_matrix[:, chem_class_idx] < EPSILON), chem_class_idx] = 0.
-                        self.composition_matrix[np.isnan(self.composition_matrix[:, chem_class_idx]), chem_class_idx] = 0.
+                        self.composition_matrix[:, chem_class_idx] = np.divide(etyp_cnts, total_cnts, where=total_cnts >= (1. - EPSILON))
+                        mask = np.where(self.composition_matrix[:, chem_class_idx] < EPSILON) or ~np.isfinite(self.composition_matrix[:, chem_class_idx])
+                        self.composition_matrix[mask, chem_class_idx] = 0.
                     else:
                         raise ValueError(f"Groupname {grpnm}, length of counts array for chemical class {chem_class_idx} needs to be the same as of counts!")
 
     def perform_pca_and_write_results(self):
         self.get_composition_matrix()
+        # TODO:export composition matrix here
 
         self.X_train = None
         self.X_train = self.composition_matrix
@@ -65,19 +66,19 @@ class ProcessSegmentation():
         with h5py.File(self.config["results_file_path"], "a") as h5w:
             trg = f"/entry{self.config['entry_id']}/segmentation"
             grp = h5w.create_group(trg)
-            grp.attrs["NX_class"] = "NXobject"  # TODO
+            grp.attrs["NX_class"] = "NXprocess"
             trg = f"/entry{self.config['entry_id']}/segmentation/pca"
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXprocess"
-            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(2))
+            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint32(2))
             trg = f"/entry{self.config['entry_id']}/segmentation/pca/result"
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXdata"
             grp.attrs["axes"] = "axis_pca_dimension"
-            grp.attrs["axis_pca_dimension"] = np.uint64(0)
+            grp.attrs["axis_pca_dimension"] = np.uint32(0)
             grp.attrs["signal"] = "axis_explained_variance"
             # further attributes, to render it a proper NeXus NXdata object
-            axis_dim = np.asarray(np.linspace(0, self.n_chem_classes - 1, num=self.n_chem_classes, endpoint=True), APT_UINT)
+            axis_dim = np.asarray(np.linspace(0, self.n_chem_classes - 1, num=self.n_chem_classes, endpoint=True), np.uint32)
             dst = h5w.create_dataset(f"{trg}/axis_pca_dimension", compression="gzip", compression_opts=1, data=axis_dim)
             dst.attrs["long_name"] = "Dimension"
             axis_expl_var = np.asarray(PCACumsumArr, np.float64)
@@ -91,7 +92,7 @@ class ProcessSegmentation():
             trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt"  # information criterion optimization (minimization)
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXprocess"
-            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(3))
+            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint32(3))
 
         # gm_scores = []
         aics = []
@@ -111,7 +112,7 @@ class ProcessSegmentation():
             bics.append(gm.bic(self.composition_matrix))
 
             with h5py.File(self.config["results_file_path"], "a") as h5w:
-                trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{n_bics_cluster}"
+                trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{n_bics_cluster - 1}"
                 grp = h5w.create_group(trg)
                 grp.attrs["NX_class"] = "NXprocess"
                 dst = h5w.create_dataset(f"{trg}/n_ic_cluster", data=np.uint64(n_bics_cluster))
@@ -123,7 +124,7 @@ class ProcessSegmentation():
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXdata"
             grp.attrs["axes"] = "axis_dimension"
-            grp.attrs["axis_dimension"] = np.uint64(0)
+            grp.attrs["axis_dimension"] = np.uint32(0)
             # grp.attrs["signal"] = "axis_aic"  # Akaike information criterion
             grp.attrs["signal"] = "axis_bic"  # Bayes information criterion
             grp.attrs["auxiliary_signals"] = ["axis_aic"]
@@ -133,15 +134,10 @@ class ProcessSegmentation():
             axis_dim = np.asarray(np.linspace(1, self.config["n_max_ic_cluster"], num=self.config["n_max_ic_cluster"], endpoint=True), APT_UINT)
             dst = h5w.create_dataset(f"{trg}/axis_dimension", compression="gzip", compression_opts=1, data=axis_dim)
             dst.attrs["long_name"] = "Number of cluster"
-            # dst.attrs["units"] = "1"
-            axis_aic = np.asarray(aics, np.float64)
-            dst = h5w.create_dataset(f"{trg}/axis_aic", compression="gzip", compression_opts=1, data=axis_aic)
-            # dst.attrs["long_name"] = "Akaike information criterion"
-            # dst.attrs["units"] = ""  # is NX_DIMENSIONLESS
-            axis_bic = np.asarray(bics, np.float64)
-            dst = h5w.create_dataset(f"{trg}/axis_bic", compression="gzip", compression_opts=1, data=axis_bic)
-            dst.attrs["long_name"] = "Information criterion value"  # "Bayes information criterion"
-            # dst.attrs["units"] = ""  # is NX_DIMENSIONLESS
+            dst = h5w.create_dataset(f"{trg}/axis_aic", compression="gzip", compression_opts=1, data=np.asarray(aics, np.float64))
+            # dst.attrs["long_name"] = "Akaike information criterion", NX_DIMENSIONLESS
+            dst = h5w.create_dataset(f"{trg}/axis_bic", compression="gzip", compression_opts=1, data=np.asarray(bics, np.float64))
+            dst.attrs["long_name"] = "Information criterion value"  # "Bayes information criterion", NX_DIMENSIONLESS
 
     def run(self):
         self.perform_pca_and_write_results()
