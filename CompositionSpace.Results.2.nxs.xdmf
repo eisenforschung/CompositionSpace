@@ -1,0 +1,52 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="2.0">
+  <Domain>
+    <Grid Name="Structured Grid" GridType="Uniform">
+      <Topology TopologyType="3DCoRectMesh" NumberOfElements="208 117 112"/>
+      <Geometry GeometryType="ORIGIN_DXDYDZ">
+        <DataItem Name="Origin" Dimensions="3" NumberType="Float" Precision="8" Format="XML">
+          -206.0 -61.0 −57.0
+        </DataItem>
+        <DataItem Name="Spacing" Dimensions="3" NumberType="Float" Precision="8" Format="XML">
+          1.0 1.0 1.0
+        </DataItem>
+      </Geometry>
+      <Attribute Name="counts" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="112 117 208" NumberType="UInt" Precision="8" Format="HDF">
+          CompositionSpace.Results.2.nxs:/entry1/voxelization/counts
+        </DataItem>
+      </Attribute>
+      <!--<Attribute Name="element1" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="112 117 208" NumberType="UInt" Precision="8" Format="HDF">
+          CompositionSpace.Results.2.nxs:/entry1/voxelization/element1/counts
+        </DataItem>
+      </Attribute>-->
+      <Attribute Name="icopt0" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="112 117 208" NumberType="Int" Precision="8" Format="HDF">
+          CompositionSpace.Results.2.nxs:/entry1/segmentation/ic_opt/cluster_analysis0/y_pred
+        </DataItem>
+      </Attribute>
+      <Attribute Name="icopt1" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="112 117 208" NumberType="Int" Precision="8" Format="HDF">
+          CompositionSpace.Results.2.nxs:/entry1/segmentation/ic_opt/cluster_analysis1/y_pred
+        </DataItem>
+      </Attribute>
+      <Attribute Name="icopt2" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="112 117 208" NumberType="Int" Precision="8" Format="HDF">
+          CompositionSpace.Results.2.nxs:/entry1/segmentation/ic_opt/cluster_analysis2/y_pred
+        </DataItem>
+      </Attribute>
+      <Attribute Name="icopt3" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="112 117 208" NumberType="Int" Precision="8" Format="HDF">
+          CompositionSpace.Results.2.nxs:/entry1/segmentation/ic_opt/cluster_analysis3/y_pred
+        </DataItem>
+      </Attribute>
+      <Attribute Name="icopt4" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="112 117 208" NumberType="Int" Precision="8" Format="HDF">
+          CompositionSpace.Results.2.nxs:/entry1/segmentation/ic_opt/cluster_analysis4/y_pred
+        </DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>

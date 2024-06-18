@@ -89,7 +89,7 @@ class ProcessPreparation:
             self.extent[dim] = APT_UINT((self.aabb3d[dim, 1] - self.aabb3d[dim, 0]) / dedge)
             print(f"\tself.aabb3d axis_id {dim}, {self.aabb3d[dim, :]}, extent {self.extent[dim]}")
             bins = np.linspace(self.aabb3d[dim, 0] + dedge, self.aabb3d[dim, 0] + (self.extent[dim] * dedge), num=self.extent[dim], endpoint=True)
-            print(f"\t{bins}")
+            # print(f"\t{bins}")
             if dim == 0:
                 self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, dim], bins, right=True), APT_UINT) * 1)
             elif dim == 1:
