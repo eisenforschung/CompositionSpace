@@ -80,18 +80,22 @@ class ProcessPreparation:
         self.voxel_identifier = np.asarray(np.zeros(n_ions), APT_UINT)
         print(f"shape {np.shape(self.voxel_identifier)}")
         dedge = self.config["voxel_edge_length"]  # cubic voxels, nm
-        for axis_id in [0, 1, 2]:  # x, y, z
-            self.aabb3d[axis_id, 0] = floor_to_multiple(np.min((self.aabb3d[axis_id, 0], np.min(xyz[:, axis_id]))), dedge)
-            self.aabb3d[axis_id, 1] = ceil_to_multiple(np.max((self.aabb3d[axis_id, 1], np.max(xyz[:, axis_id]))), dedge)
-            self.extent[axis_id] = APT_UINT((self.aabb3d[axis_id, 1] - self.aabb3d[axis_id, 0]) / dedge)
-            print(f"self.aabb3d axis_id {axis_id}, {self.aabb3d[axis_id, :]}, extent {self.extent[axis_id]}")
-            bins = np.linspace(self.aabb3d[axis_id, 0] + dedge, self.aabb3d[axis_id, 0] + (self.extent[axis_id] * dedge), num=self.extent[axis_id], endpoint=True)
-            if axis_id == 0:
-                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), APT_UINT) * 1)
-            elif axis_id == 1:
-                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), APT_UINT) * APT_UINT(self.extent[0]))
-            else:
-                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), APT_UINT) * APT_UINT(self.extent[0]) * APT_UINT(self.extent[1]))
+        for dim in [0, 1, 2]:  # 0 -> x, 1 -> y, 2 -> z
+            print(f"dim {dim}")
+            self.aabb3d[dim, 0] = floor_to_multiple(np.min((self.aabb3d[dim, 0], np.min(xyz[:, dim]))), dedge) - (2. * dedge)
+            print(f"\tnp.min(xyz[:, axis_id]) {np.min(xyz[:, dim])} >>>> {self.aabb3d[dim, 0]}")
+            self.aabb3d[dim, 1] = ceil_to_multiple(np.max((self.aabb3d[dim, 1], np.max(xyz[:, dim]))), dedge) + (2. * dedge)
+            print(f"\tnp.max(xyz[:, axis_id]) {np.max(xyz[:, dim])} >>>> {self.aabb3d[dim, 1]}")
+            self.extent[dim] = APT_UINT((self.aabb3d[dim, 1] - self.aabb3d[dim, 0]) / dedge)
+            print(f"\tself.aabb3d axis_id {dim}, {self.aabb3d[dim, :]}, extent {self.extent[dim]}")
+            bins = np.linspace(self.aabb3d[dim, 0] + dedge, self.aabb3d[dim, 0] + (self.extent[dim] * dedge), num=self.extent[dim], endpoint=True)
+            print(f"\t{bins}")
+            if dim == 0:
+                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, dim], bins, right=True), APT_UINT) * 1)
+            elif dim == 1:
+                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, dim], bins, right=True), APT_UINT) * APT_UINT(self.extent[0]))
+            elif dim == 2:
+                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, dim], bins, right=True), APT_UINT) * APT_UINT(self.extent[0]) * APT_UINT(self.extent[1]))
         if np.prod(self.extent) >= 1:
             print(f"np.max(self.voxel_identifier) {np.max(self.voxel_identifier)}")
             print(f"np.prod(self.extent) {np.prod(self.extent)}")
@@ -200,7 +204,7 @@ class ProcessPreparation:
 
             for idx, symbol in enumerate(elem_cnts):
                 # atom/molecular ion-type-specific contribution/intensity/count in each voxel/cell
-                trg = f"/entry{self.config['entry_id']}/voxelization/element{idx}"
+                trg = f"/entry{self.config['entry_id']}/voxelization/element{idx + 1}"
                 grp = h5w.create_group(f"{trg}")
                 grp.attrs["NX_class"] = "NXion"
                 dst = h5w.create_dataset(f"{trg}/charge_state", data=np.uint8(0))
