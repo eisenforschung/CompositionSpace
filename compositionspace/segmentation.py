@@ -1,30 +1,34 @@
+import os
+import h5py
+import yaml
+import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
-import h5py
-import numpy as np
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
-import yaml
-from compositionspace.utils import EPSILON
+from compositionspace.utils import EPSILON, APT_UINT
 
 
 class ProcessSegmentation():
-    def __init__(self, 
-                 config_file_path: str = "", 
+    def __init__(self,
+                 config_file_path: str = "",
                  results_file_path: str = "",
                  entry_id: int = 1,
                  verbose: bool = False):
         # why should inputfile be a dictionary, better always document changes made in file
         self.config = {}
-        with open(config_file_path, "r") as yml:
-            self.config = yaml.safe_load(yml)  # TODO try, except
-        self.config["config_file_path"] = config_file_path
-        self.config["results_file_path"] = results_file_path
+        if os.path.exists(config_file_path):
+            with open(config_file_path, "r") as yml:
+                self.config = yaml.safe_load(yml)
+        else:
+            raise IOError(f"File {config_file_path} does not exist!")
+        if os.path.exists(results_file_path):
+            self.config["results_file_path"] = results_file_path
+        else:
+            raise IOError(f"File {results_file_path} does not exist!")
         self.config["entry_id"] = entry_id
         self.verbose = verbose
         self.version = get_repo_last_commit()
-        # if not os.path.exists(self.config['output_path']):
-        #     os.mkdir(self.config['output_path'])
-        self.n_itypes = 0
+        self.n_chem_classes = 0
         self.composition_matrix = None
         self.X_train = None
 
@@ -32,25 +36,29 @@ class ProcessSegmentation():
         self.composition_matrix = None
         with h5py.File(self.config["results_file_path"], "r") as h5r:
             src = f"/entry{self.config['entry_id']}/voxelization"
-            total_weights = h5r[f"{src}/total"][:]
-            self.n_itypes = 73  # TODO::fish from h5r
+            self.n_chem_classes = sum(1 for grpnm in h5r[f"{src}"] if grpnm.startswith("element"))
+            print(f"Composition matrix has {self.n_chem_classes} chemical classes")
 
-            self.composition_matrix = np.zeros([np.shape(total_weights)[0], self.n_itypes], np.float64)
-            for ityp in np.arange(0, self.n_itypes):
-                ityp_weights = h5r[f"{src}/ion{ityp}/weight"][:]
-                if np.shape(ityp_weights) == np.shape(total_weights):
-                    self.composition_matrix[:, ityp] = np.divide(ityp_weights, total_weights, where= total_weights >= EPSILON)
-                    self.composition_matrix[np.where(self.composition_matrix[:, ityp] < EPSILON), ityp] = 0.
-                    self.composition_matrix[np.isnan(self.composition_matrix[:, ityp]), ityp] = 0.
-                else:
-                    raise ValueError(f"Length of iontype-specific and total weight arrays for ityp {ityp} needs to be the same!")
+            total_cnts = np.asarray(h5r[f"{src}/counts"][:], np.float64)
+            self.composition_matrix = np.zeros([np.shape(total_cnts)[0], self.n_chem_classes + 1], np.float64)
+
+            for grpnm in h5r[f"{src}"]:
+                if grpnm.startswith("element"):
+                    chem_class_idx = int(grpnm.replace("element", ""))
+                    etyp_cnts = np.asarray(h5r[f"{src}/{grpnm}/counts"][:], np.float64)
+                    if np.shape(etyp_cnts) == np.shape(total_cnts):
+                        self.composition_matrix[:, chem_class_idx] = np.divide(etyp_cnts, total_cnts, where=total_cnts >= EPSILON)
+                        self.composition_matrix[np.where(self.composition_matrix[:, chem_class_idx] < EPSILON), chem_class_idx] = 0.
+                        self.composition_matrix[np.isnan(self.composition_matrix[:, chem_class_idx]), chem_class_idx] = 0.
+                    else:
+                        raise ValueError(f"Groupname {grpnm}, length of counts array for chemical class {chem_class_idx} needs to be the same as of counts!")
 
     def perform_pca_and_write_results(self):
         self.get_composition_matrix()
 
         self.X_train = None
         self.X_train = self.composition_matrix
-        PCAObj = PCA(n_components = self.n_itypes)
+        PCAObj = PCA(n_components = self.n_chem_classes)
         PCATrans = PCAObj.fit_transform(self.X_train)
         PCACumsumArr = np.cumsum(PCAObj.explained_variance_ratio_)
 
@@ -69,7 +77,7 @@ class ProcessSegmentation():
             grp.attrs["axis_pca_dimension"] = np.uint64(0)
             grp.attrs["signal"] = "axis_explained_variance"
             # further attributes, to render it a proper NeXus NXdata object
-            axis_dim = np.asarray(np.linspace(0, self.n_itypes - 1, num=self.n_itypes, endpoint=True), np.uint32)
+            axis_dim = np.asarray(np.linspace(0, self.n_chem_classes - 1, num=self.n_chem_classes, endpoint=True), APT_UINT)
             dst = h5w.create_dataset(f"{trg}/axis_pca_dimension", compression="gzip", compression_opts=1, data=axis_dim)
             dst.attrs["long_name"] = "Dimension"
             axis_expl_var = np.asarray(PCACumsumArr, np.float64)
@@ -106,8 +114,8 @@ class ProcessSegmentation():
                 trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{n_bics_cluster}"
                 grp = h5w.create_group(trg)
                 grp.attrs["NX_class"] = "NXprocess"
-                dst = h5w.create_dataset(f"{trg}/n_ic_cluster", data=np.uint32(n_bics_cluster))
-                dst = h5w.create_dataset(f"{trg}/y_pred", compression="gzip", compression_opts=1, data=np.asarray(y_pred, np.uint32))
+                dst = h5w.create_dataset(f"{trg}/n_ic_cluster", data=np.uint64(n_bics_cluster))
+                dst = h5w.create_dataset(f"{trg}/y_pred", compression="gzip", compression_opts=1, data=np.asarray(y_pred, APT_UINT))
         # all clusters processed TODO: take advantage of trivial parallelism here
 
         with h5py.File(self.config["results_file_path"], "a") as h5w:
@@ -122,7 +130,7 @@ class ProcessSegmentation():
             dst = h5w.create_dataset(f"{trg}/title", data="Information criterion minimization")
 
             # further attributes to render it a proper NeXus NXdata object
-            axis_dim = np.asarray(np.linspace(1, self.config["n_max_ic_cluster"], num=self.config["n_max_ic_cluster"], endpoint=True), np.uint32)
+            axis_dim = np.asarray(np.linspace(1, self.config["n_max_ic_cluster"], num=self.config["n_max_ic_cluster"], endpoint=True), APT_UINT)
             dst = h5w.create_dataset(f"{trg}/axis_dimension", compression="gzip", compression_opts=1, data=axis_dim)
             dst.attrs["long_name"] = "Number of cluster"
             # dst.attrs["units"] = "1"

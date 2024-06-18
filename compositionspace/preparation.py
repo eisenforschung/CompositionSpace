@@ -5,37 +5,45 @@ import numpy as np
 import h5py
 import datetime as dt
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
-from compositionspace.utils import floor_to_multiple, ceil_to_multiple
+from compositionspace.utils import floor_to_multiple, ceil_to_multiple, APT_UINT, get_chemical_element_multiplicities
 
 # https://stackoverflow.com/questions/47182183/pandas-chained-assignment-warning-exception-handling
 # pd.options.mode.chained_assignment = None
 
 
 class ProcessPreparation:
-    def __init__(self, 
-                 config_file_path: str = "", 
+    def __init__(self,
+                 config_file_path: str = "",
                  results_file_path: str = "",
                  entry_id: int = 1,
                  verbose: bool = False):
-        # why should inputfile be a dictionary, better always document changes made in file
+        """Initialize the class."""
         self.config = {}
-        with open(config_file_path, "r") as yml:
-            self.config = yaml.safe_load(yml)  # TODO try, except
+        if os.path.exists(config_file_path):
+            with open(config_file_path, "r") as yml:
+                self.config = yaml.safe_load(yml)
+        else:
+            raise IOError(f"File {config_file_path} does not exist!")
         self.config["config_file_path"] = config_file_path
         self.config["results_file_path"] = results_file_path
         self.config["entry_id"] = entry_id
         self.verbose = verbose
         self.version = get_repo_last_commit()
-        # if not os.path.exists(self.config['output_path']):
-        #     os.mkdir(self.config['output_path'])
         self.voxel_identifier = None
         self.n_ions = 0
+        self.itypes = {}
+        self.elements = set()
         self.aabb3d = None
         self.extent = None
         self.lu_ityp_voxel_id_evap_id = None
 
+    def init_ranging(self, itypes: dict, elements: set):
+        """Get metadata about itypes and elements."""
+        self.itypes = itypes
+        self.elements = elements
+
     def write_init_results(self):
-        """Init a NeXus results file."""
+        """Init the NeXus/HDF5 results file."""
         with h5py.File(self.config["results_file_path"], "w") as h5w:
             h5w.attrs["NX_class"] = "NXroot"
             h5w.attrs["file_name"] = self.config["results_file_path"]
@@ -57,61 +65,62 @@ class ProcessPreparation:
             dst.attrs["version"] = get_repo_last_commit()
 
     def define_voxelization_grid(self, xyz):
-        column_names = ["x", "y", "z"]
+        """Define grid with which to discretize reconstructed ion positions and voxelize."""
         # initialize extent (number of cells) along x, y, z axes
         self.n_ions = np.shape(xyz)[0]
         self.extent = [0, 0, 0]
         # initialize min, max bounds for x, y, z
-        self.aabb3d = np.reshape([np.finfo(np.float32).max, np.finfo(np.float32).min,
-                np.finfo(np.float32).max, np.finfo(np.float32).min,
-                np.finfo(np.float32).max, np.finfo(np.float32).min], (3, 2), order="C")
+        self.aabb3d = np.reshape([
+            np.finfo(np.float32).max, np.finfo(np.float32).min,
+            np.finfo(np.float32).max, np.finfo(np.float32).min,
+            np.finfo(np.float32).max, np.finfo(np.float32).min], (3, 2), order="C")
         if self.verbose:
             print(self.aabb3d)
         n_ions = np.shape(xyz)[0]
-        self.voxel_identifier = np.asarray(np.zeros(n_ions), np.uint32)
+        self.voxel_identifier = np.asarray(np.zeros(n_ions), APT_UINT)
         print(f"shape {np.shape(self.voxel_identifier)}")
-        # edge length of cubic cells/voxels in nm
-        dedge = self.config["voxel_edge_length"]
-        for axis_id in [0, 1, 2]:
-            column_name = column_names[axis_id]
-            # i = np.asarray(df_lst[0].loc[:, column_name], np.float32)
+        dedge = self.config["voxel_edge_length"]  # cubic voxels, nm
+        for axis_id in [0, 1, 2]:  # x, y, z
             self.aabb3d[axis_id, 0] = floor_to_multiple(np.min((self.aabb3d[axis_id, 0], np.min(xyz[:, axis_id]))), dedge)
             self.aabb3d[axis_id, 1] = ceil_to_multiple(np.max((self.aabb3d[axis_id, 1], np.max(xyz[:, axis_id]))), dedge)
-            self.extent[axis_id] = np.uint32((self.aabb3d[axis_id, 1] - self.aabb3d[axis_id, 0]) / dedge)
-            print(f"self.aabb3d {self.aabb3d[axis_id, :]}, extent {self.extent[axis_id]}")
+            self.extent[axis_id] = APT_UINT((self.aabb3d[axis_id, 1] - self.aabb3d[axis_id, 0]) / dedge)
+            print(f"self.aabb3d axis_id {axis_id}, {self.aabb3d[axis_id, :]}, extent {self.extent[axis_id]}")
             bins = np.linspace(self.aabb3d[axis_id, 0] + dedge, self.aabb3d[axis_id, 0] + (self.extent[axis_id] * dedge), num=self.extent[axis_id], endpoint=True)
-            print(bins)
             if axis_id == 0:
-                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), np.uint32) * 1)
+                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), APT_UINT) * 1)
             elif axis_id == 1:
-                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), np.uint32) * np.uint32(self.extent[0]))
+                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), APT_UINT) * APT_UINT(self.extent[0]))
             else:
-                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), np.uint32) * np.uint32(self.extent[0]) * np.uint32(self.extent[1]))
-        if self.verbose:
-            print(self.voxel_identifier[0:10])
-        print(np.max(self.voxel_identifier))
+                self.voxel_identifier = self.voxel_identifier + (np.asarray(np.digitize(xyz[:, axis_id], bins, right=True), APT_UINT) * APT_UINT(self.extent[0]) * APT_UINT(self.extent[1]))
+        if np.prod(self.extent) >= 1:
+            print(f"np.max(self.voxel_identifier) {np.max(self.voxel_identifier)}")
+            print(f"np.prod(self.extent) {np.prod(self.extent)}")
+        else:
+            raise ValueError("Voxelization grid has no cell!")
 
-    def define_lookup_table(self, itypes):
-        """Define a lookup table for summary statistics on voxel composition fast."""
-        ion_struct = [('iontype', np.uint8), ('voxel_id', np.uint32), ('evap_id', np.uint32)]
+    def define_lookup_table(self, itypes, evaporation_id: bool = False):
+        """Define a lookup table for fast summary statistics of voxel contributions."""
+        if evaporation_id:
+            ion_struct = [('iontype', np.uint8), ('voxel_id', APT_UINT), ('evap_id', APT_UINT)]
+        else:
+            ion_struct = [('iontype', np.uint8), ('voxel_id', APT_UINT)]
         n_ions = np.shape(itypes)[0]
         self.lu_ityp_voxel_id_evap_id = np.zeros(n_ions, dtype=ion_struct)
         self.lu_ityp_voxel_id_evap_id["iontype"] = itypes[:]
         self.lu_ityp_voxel_id_evap_id["voxel_id"] = self.voxel_identifier
         # del voxel_identifier
-        self.lu_ityp_voxel_id_evap_id["evap_id"] = np.asarray(np.linspace(1, n_ions, num=n_ions, endpoint=True), np.uint32)
-        if self.verbose:
-            print(self.lu_ityp_voxel_id_evap_id[0:10])
-        self.lu_ityp_voxel_id_evap_id = np.sort(self.lu_ityp_voxel_id_evap_id, kind="stable", order=["iontype", "voxel_id", "evap_id"])
-        if self.verbose:
-            print(self.lu_ityp_voxel_id_evap_id[0:10])
-            print(self.lu_ityp_voxel_id_evap_id[-10::])
+        if evaporation_id:
+            self.lu_ityp_voxel_id_evap_id["evap_id"] = np.asarray(np.linspace(1, n_ions, num=n_ions, endpoint=True), APT_UINT)
+        # we sort this LU by iontype such that we can get all ids of voxels contributing to this iontype
+        if evaporation_id:
+            self.lu_ityp_voxel_id_evap_id = np.sort(self.lu_ityp_voxel_id_evap_id, kind="stable", order=["iontype", "voxel_id", "evap_id"])
+        else:
+            self.lu_ityp_voxel_id_evap_id = np.sort(self.lu_ityp_voxel_id_evap_id, kind="stable", order=["iontype", "voxel_id"])
 
     def write_voxelization_grid_info(self):
-        # voxelization
+        """Write metadata that detail the discretization grid to NeXus/HDF5."""
         if not os.path.isfile(self.config["results_file_path"]):
-            raise LookupError(f"Results file {self.config['results_file_path']} has not been instantiated!")
-
+            raise IOError(f"Results file {self.config['results_file_path']} does not exist!")
         with h5py.File(self.config["results_file_path"], "a") as h5w:
             trg = f"/entry{self.config['entry_id']}/voxelization"
             grp = h5w.create_group(trg)
@@ -130,7 +139,7 @@ class ProcessPreparation:
             dedge = self.config["voxel_edge_length"]
             dst = h5w.create_dataset(f"{trg}/cell_dimensions", data=np.asarray([dedge, dedge, dedge], np.float64))
             dst.attrs["units"] = "nm"
-            dst = h5w.create_dataset(f"{trg}/extent", data=np.asarray(self.extent, np.uint32))  # max. 2*32 cells
+            dst = h5w.create_dataset(f"{trg}/extent", data=np.asarray(self.extent, APT_UINT))  # max. 2*32 cells
             identifier_offset = 0
             dst = h5w.create_dataset(f"{trg}/identifier_offset", data=np.uint64(identifier_offset))  # start counting cells from 0
 
@@ -149,7 +158,7 @@ class ProcessPreparation:
             del position
 
             voxel_id = identifier_offset
-            coordinate = np.zeros([c, 3], np.uint32)
+            coordinate = np.zeros([c, 3], APT_UINT)
             for k in np.arange(0, self.extent[2]):
                 for j in np.arange(0, self.extent[1]):
                     for i in np.arange(0, self.extent[0]):
@@ -158,48 +167,52 @@ class ProcessPreparation:
             dst = h5w.create_dataset(f"{trg}/coordinate", compression="gzip", compression_opts=1, data=coordinate)
             del coordinate
 
-    def write_voxelization_results(self, ityp_info: dict):
+    def write_voxelization_results(self):
+        """Perform voxelization and write results to NeXus/HDF5."""
+        if not os.path.isfile(self.config["results_file_path"]):
+            raise IOError(f"Results file {self.config['results_file_path']} does not exist!")
+
+        c = np.prod(self.extent)
+        elem_cnts = {}
+        for symbol in self.elements:
+            elem_cnts[symbol] = np.zeros(c, APT_UINT)
+        total_cnts = np.zeros(c, APT_UINT)
+
         with h5py.File(self.config["results_file_path"], "a") as h5w:
             trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
             dst = h5w.create_dataset(f"{trg}/voxel_identifier", compression="gzip", compression_opts=1, data=self.voxel_identifier)
 
-            c = np.prod(self.extent)
-            print(f"")
-            # now just add weight/counts for a the iontype-specific part of the lookup-table
-            print(f"Cardinality is {c} means we have to visit so that many entries in the lookup table "
-                  f"{np.sum(self.lu_ityp_voxel_id_evap_id['iontype'] == 0)} but by virtue of construction "
-                  f"of the lookup table all the indices will be close in cache.")
-            total_weights = np.zeros(c, np.float64)
-            for ityp in np.arange(0, len(ityp_info)):
-                inds = np.argwhere(self.lu_ityp_voxel_id_evap_id["iontype"] == ityp)
+            for ityp, tpl in self.itypes.items():
+                if ityp == "ion0":
+                    continue
+                print(f"{ityp}, {tpl}:")
+                multiplicities = get_chemical_element_multiplicities(tpl[0], verbose=True)
+
+                inds = np.argwhere(self.lu_ityp_voxel_id_evap_id["iontype"] == tpl[1])
                 offsets = (np.min(inds), np.max(inds))
-                # print(f"offsets {offsets}")
-                # these are inclusive [min, max] array indices to use on lu_ityp_voxel_id_evap_id !
-                
-            # alternatively one could make two loops where in the first an offset lookup table is generated
-            # after this point one can drop the iontype and evap_id columns from the lu_ityp_voxel_id_evap_id lookup table
-                ityp_weights = np.zeros(c, np.float64)
-                for offset in np.arange(offsets[0], offsets[1] + 1):
-                    idx = self.lu_ityp_voxel_id_evap_id["voxel_id"][offset]
-                    ityp_weights[idx] += 1.
-                # print(f"ityp {ityp}, np.sum(ityp_weights) {np.sum(ityp_weights)}")
-                
+                for symbol, cnts in multiplicities.items():
+                    for offset in np.arange(offsets[0], offsets[1] + 1):
+                        idx = self.lu_ityp_voxel_id_evap_id["voxel_id"][offset]
+                        elem_cnts[symbol][idx] += cnts
+                        # offsets are inclusive [min, max] indices to use on lu_ityp_voxel_id_evap_id !
+                        # alternatively, one could make two loops where in the first an offset lookup table is generated
+                        # after this point one can drop the iontype and evap_id columns from the lu_ityp_voxel_id_evap_id lookup table
+
+            for idx, symbol in enumerate(elem_cnts):
                 # atom/molecular ion-type-specific contribution/intensity/count in each voxel/cell
-                trg = f"/entry{self.config['entry_id']}/voxelization/ion{ityp}"
+                trg = f"/entry{self.config['entry_id']}/voxelization/element{idx}"
                 grp = h5w.create_group(f"{trg}")
                 grp.attrs["NX_class"] = "NXion"
-                dst = h5w.create_dataset(f"{trg}/name", data=ityp_info[f"ion{ityp}"][0])
-                dst = h5w.create_dataset(f"{trg}/weight", compression="gzip", compression_opts=1, data=ityp_weights)
-                dst.attrs["units"] = "a.u."  
-                
-                total_weights += ityp_weights
-                print(f"ityp {ityp}, np.sum(total_weights) {np.sum(total_weights)}")
-            print(f"cardinality of cg_grid {c}, n_ions {self.n_ions}")
+                dst = h5w.create_dataset(f"{trg}/charge_state", data=np.uint8(0))
+                dst = h5w.create_dataset(f"{trg}/name", data=symbol)
+                dst = h5w.create_dataset(f"{trg}/counts", compression="gzip", compression_opts=1, data=elem_cnts[symbol])
+                total_cnts += elem_cnts[symbol]
+                print(f"symbol {symbol}, idx {idx}, np.sum(elem_cnts[symbol]) {np.sum(elem_cnts[symbol])}, np.sum(total_cnts) {np.sum(total_cnts)}")
+            print(f"n_ions {self.n_ions}")
 
             # total atom/molecular ion contribution/intensity/count in each voxel/cell
             trg = f"/entry{self.config['entry_id']}/voxelization"
-            dst = h5w.create_dataset(f"{trg}/total", compression="gzip", compression_opts=1, data=total_weights)
-            dst.attrs["units"] = "a.u."
+            dst = h5w.create_dataset(f"{trg}/counts", compression="gzip", compression_opts=1, data=total_cnts)
 
         # For a large number of voxels, say a few million and dozens of iontypes storing all
         # ityp_weights in main memory might not be useful, instead these should be stored in the HDF5 file

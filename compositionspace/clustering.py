@@ -1,3 +1,4 @@
+import os
 import yaml
 import numpy as np
 import h5py
@@ -7,14 +8,21 @@ from compositionspace.get_gitrepo_commit import get_repo_last_commit
 
 class ProcessClustering:
     def __init__(self,
-                 config_file_path: str = "", 
+                 config_file_path: str = "",
                  results_file_path: str = "",
                  entry_id: int = 1,
                  verbose: bool = False):
         # why should inputfile be a dictionary, better always document changes made in file
         self.config = {}
-        with open(config_file_path, "r") as yml:
-            self.config = yaml.safe_load(yml)  # TODO try, except
+        if os.path.exists(config_file_path):
+            with open(config_file_path, "r") as yml:
+                self.config = yaml.safe_load(yml)
+        else:
+            raise IOError(f"File {config_file_path} does not exist!")
+        if not os.path.exists(results_file_path):
+            raise IOError(f"File {results_file_path} does not exist!")
+        if entry_id < 1:
+            raise ValueError(f"entry_id needs to be at least 1 !")
         self.config["config_file_path"] = config_file_path
         self.config["results_file_path"] = results_file_path
         self.config["entry_id"] = entry_id
@@ -63,7 +71,7 @@ class ProcessClustering:
             dst = h5w.create_dataset(f"{trg}/epsilon", data=np.float64(eps))
             dst.attrs["units"] = "nm"
             dst = h5w.create_dataset(f"{trg}/min_samples", data=np.uint32(min_samples))
-            dst = h5w.create_dataset(f"{trg}/labels", compression="gzip", compression_opts=1, data=np.asarray(db.labels_, np.int32))
+            dst = h5w.create_dataset(f"{trg}/labels", compression="gzip", compression_opts=1, data=np.asarray(db.labels_, np.int64))
             h5w.close()
 
             del trg_vxl_pos
