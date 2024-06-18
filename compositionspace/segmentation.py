@@ -8,12 +8,15 @@ from compositionspace.get_gitrepo_commit import get_repo_last_commit
 from compositionspace.utils import EPSILON, APT_UINT
 
 
-class ProcessSegmentation():
-    def __init__(self,
-                 config_file_path: str = "",
-                 results_file_path: str = "",
-                 entry_id: int = 1,
-                 verbose: bool = False):
+class ProcessSegmentation:
+    def __init__(
+        self,
+        config_file_path: str = "",
+        results_file_path: str = "",
+        entry_id: int = 1,
+        verbose: bool = False,
+    ):
+        """Initialize the class."""
         # why should inputfile be a dictionary, better always document changes made in file
         self.config = {}
         if os.path.exists(config_file_path):
@@ -33,34 +36,44 @@ class ProcessSegmentation():
         self.X_train = None
 
     def get_composition_matrix(self):
+        """Compute (n_ions, n_chemical_class) composition matrix from per-class counts."""
         self.composition_matrix = None
         with h5py.File(self.config["results_file_path"], "r") as h5r:
             src = f"/entry{self.config['entry_id']}/voxelization"
-            self.n_chem_classes = sum(1 for grpnm in h5r[f"{src}"] if grpnm.startswith("element"))
+            self.n_chem_classes = sum(
+                1 for grpnm in h5r[f"{src}"] if grpnm.startswith("element")
+            )
             print(f"Composition matrix has {self.n_chem_classes} chemical classes")
 
             total_cnts = np.asarray(h5r[f"{src}/counts"][:], np.float64)
-            self.composition_matrix = np.zeros([np.shape(total_cnts)[0], self.n_chem_classes + 1], np.float64)
+            self.composition_matrix = np.zeros(
+                [np.shape(total_cnts)[0], self.n_chem_classes + 1], np.float64
+            )
 
             for grpnm in h5r[f"{src}"]:
                 if grpnm.startswith("element"):
                     chem_class_idx = int(grpnm.replace("element", ""))
                     etyp_cnts = np.asarray(h5r[f"{src}/{grpnm}/counts"][:], np.float64)
                     if np.shape(etyp_cnts) == np.shape(total_cnts):
-                        self.composition_matrix[:, chem_class_idx] = np.divide(etyp_cnts,
-                                                                               total_cnts,
-                                                                               out=self.composition_matrix[:, chem_class_idx],
-                                                                               where=total_cnts >= (1. - EPSILON))
+                        self.composition_matrix[:, chem_class_idx] = np.divide(
+                            etyp_cnts,
+                            total_cnts,
+                            out=self.composition_matrix[:, chem_class_idx],
+                            where=total_cnts >= (1.0 - EPSILON),
+                        )
                     else:
-                        raise ValueError(f"Groupname {grpnm}, length of counts array for chemical class {chem_class_idx} needs to be the same as of counts!")
+                        raise ValueError(
+                            f"Groupname {grpnm}, length of counts array for chemical class {chem_class_idx} needs to be the same as of counts!"
+                        )
 
     def perform_pca_and_write_results(self):
+        """Perform PCA of n_chemical_class-dimensional correlation."""
         self.get_composition_matrix()
         # TODO:export composition matrix here
 
         self.X_train = None
         self.X_train = self.composition_matrix
-        PCAObj = PCA(n_components = self.n_chem_classes)
+        PCAObj = PCA(n_components=self.n_chem_classes)
         PCATrans = PCAObj.fit_transform(self.X_train)
         PCACumsumArr = np.cumsum(PCAObj.explained_variance_ratio_)
 
@@ -79,14 +92,30 @@ class ProcessSegmentation():
             grp.attrs["axis_pca_dimension"] = np.uint32(0)
             grp.attrs["signal"] = "axis_explained_variance"
             # further attributes, to render it a proper NeXus NXdata object
-            axis_dim = np.asarray(np.linspace(0, self.n_chem_classes - 1, num=self.n_chem_classes, endpoint=True), np.uint32)
-            dst = h5w.create_dataset(f"{trg}/axis_pca_dimension", compression="gzip", compression_opts=1, data=axis_dim)
+            axis_dim = np.asarray(
+                np.linspace(
+                    0, self.n_chem_classes - 1, num=self.n_chem_classes, endpoint=True
+                ),
+                np.uint32,
+            )
+            dst = h5w.create_dataset(
+                f"{trg}/axis_pca_dimension",
+                compression="gzip",
+                compression_opts=1,
+                data=axis_dim,
+            )
             dst.attrs["long_name"] = "Dimension"
             axis_expl_var = np.asarray(PCACumsumArr, np.float64)
-            dst = h5w.create_dataset(f"{trg}/axis_explained_variance", compression="gzip", compression_opts=1, data=axis_expl_var)
+            dst = h5w.create_dataset(
+                f"{trg}/axis_explained_variance",
+                compression="gzip",
+                compression_opts=1,
+                data=axis_expl_var,
+            )
             dst.attrs["long_name"] = "Explained variance"
 
     def perform_bics_minimization_and_write_results(self):
+        """Perform Gaussian mixture model supervised ML with (Bayesian) IC minimization."""
         self.get_composition_matrix()
 
         self.X_train = None
@@ -119,8 +148,15 @@ class ProcessSegmentation():
                 trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{n_bics_cluster - 1}"
                 grp = h5w.create_group(trg)
                 grp.attrs["NX_class"] = "NXprocess"
-                dst = h5w.create_dataset(f"{trg}/n_ic_cluster", data=np.uint64(n_bics_cluster))
-                dst = h5w.create_dataset(f"{trg}/y_pred", compression="gzip", compression_opts=1, data=np.asarray(y_pred, APT_UINT))
+                dst = h5w.create_dataset(
+                    f"{trg}/n_ic_cluster", data=np.uint64(n_bics_cluster)
+                )
+                dst = h5w.create_dataset(
+                    f"{trg}/y_pred",
+                    compression="gzip",
+                    compression_opts=1,
+                    data=np.asarray(y_pred, APT_UINT),
+                )
         # all clusters processed TODO: take advantage of trivial parallelism here
 
         with h5py.File(self.config["results_file_path"], "a") as h5w:
@@ -132,18 +168,46 @@ class ProcessSegmentation():
             # grp.attrs["signal"] = "axis_aic"  # Akaike information criterion
             grp.attrs["signal"] = "axis_bic"  # Bayes information criterion
             grp.attrs["auxiliary_signals"] = ["axis_aic"]
-            dst = h5w.create_dataset(f"{trg}/title", data="Information criterion minimization")
+            dst = h5w.create_dataset(
+                f"{trg}/title", data="Information criterion minimization"
+            )
 
             # further attributes to render it a proper NeXus NXdata object
-            axis_dim = np.asarray(np.linspace(1, self.config["n_max_ic_cluster"], num=self.config["n_max_ic_cluster"], endpoint=True), APT_UINT)
-            dst = h5w.create_dataset(f"{trg}/axis_dimension", compression="gzip", compression_opts=1, data=axis_dim)
+            axis_dim = np.asarray(
+                np.linspace(
+                    1,
+                    self.config["n_max_ic_cluster"],
+                    num=self.config["n_max_ic_cluster"],
+                    endpoint=True,
+                ),
+                APT_UINT,
+            )
+            dst = h5w.create_dataset(
+                f"{trg}/axis_dimension",
+                compression="gzip",
+                compression_opts=1,
+                data=axis_dim,
+            )
             dst.attrs["long_name"] = "Number of cluster"
-            dst = h5w.create_dataset(f"{trg}/axis_aic", compression="gzip", compression_opts=1, data=np.asarray(aics, np.float64))
+            dst = h5w.create_dataset(
+                f"{trg}/axis_aic",
+                compression="gzip",
+                compression_opts=1,
+                data=np.asarray(aics, np.float64),
+            )
             # dst.attrs["long_name"] = "Akaike information criterion", NX_DIMENSIONLESS
-            dst = h5w.create_dataset(f"{trg}/axis_bic", compression="gzip", compression_opts=1, data=np.asarray(bics, np.float64))
-            dst.attrs["long_name"] = "Information criterion value"  # "Bayes information criterion", NX_DIMENSIONLESS
+            dst = h5w.create_dataset(
+                f"{trg}/axis_bic",
+                compression="gzip",
+                compression_opts=1,
+                data=np.asarray(bics, np.float64),
+            )
+            dst.attrs["long_name"] = (
+                "Information criterion value"  # "Bayes information criterion", NX_DIMENSIONLESS
+            )
 
     def run(self):
+        """Run step 2 and 3 of the workflow."""
         self.perform_pca_and_write_results()
         self.perform_bics_minimization_and_write_results()
 

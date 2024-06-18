@@ -2,7 +2,7 @@
 # output_path: tests/output
 voxel_edge_length: 1
 n_max_ic_cluster: 5
-n_sel_ic_cluster: 5
+# n_sel_ic_cluster: 5
 ml_models:
    # name: GaussianMixture
    # GaussianMixture:

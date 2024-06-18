@@ -1,3 +1,5 @@
+"""Run step 4 of the workflow."""
+
 import os
 import yaml
 import numpy as np
@@ -8,11 +10,14 @@ from compositionspace.utils import APT_UINT
 
 
 class ProcessClustering:
-    def __init__(self,
-                 config_file_path: str = "",
-                 results_file_path: str = "",
-                 entry_id: int = 1,
-                 verbose: bool = False):
+    def __init__(
+        self,
+        config_file_path: str = "",
+        results_file_path: str = "",
+        entry_id: int = 1,
+        verbose: bool = False,
+    ):
+        """Initialize the class."""
         # why should inputfile be a dictionary, better always document changes made in file
         self.config = {}
         if os.path.exists(config_file_path):
@@ -31,13 +36,16 @@ class ProcessClustering:
         self.version = get_repo_last_commit()
 
     def run_and_write_results(self):
+        """Perform DBScan clustering for each Gaussian mixture model result."""
         # n_ic_cluster = self.config["n_sel_ic_cluster"]
         eps = self.config["ml_models"]["DBScan"]["eps"]
         min_samples = self.config["ml_models"]["DBScan"]["min_samples"]
         print(f"DBScan configuration: eps {eps} nm, min_samples {min_samples}")
 
         h5r = h5py.File(self.config["results_file_path"], "r")
-        ic_results_group_names = list(h5r[f"/entry{self.config['entry_id']}/segmentation/ic_opt"].keys())
+        ic_results_group_names = list(
+            h5r[f"/entry{self.config['entry_id']}/segmentation/ic_opt"].keys()
+        )
         print(ic_results_group_names)
         h5r.close()
 
@@ -58,9 +66,15 @@ class ProcessClustering:
 
             # using here explicitly blocking calls for open and close as working with a "with h5py.File ..." ran in conflicts
             h5r = h5py.File(self.config["results_file_path"], "r")
-            phase_identifier = h5r[f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{ic_run_id}/y_pred"][:]
-            all_vxl_pos = h5r[f"/entry{self.config['entry_id']}/voxelization/cg_grid/position"][:, :]
-            print(f"np.shape(all_vxl_pos) {np.shape(all_vxl_pos)} list(set(phase_identifier) {list(set(phase_identifier))}")
+            phase_identifier = h5r[
+                f"/entry{self.config['entry_id']}/segmentation/ic_opt/cluster_analysis{ic_run_id}/y_pred"
+            ][:]
+            all_vxl_pos = h5r[
+                f"/entry{self.config['entry_id']}/voxelization/cg_grid/position"
+            ][:, :]
+            print(
+                f"np.shape(all_vxl_pos) {np.shape(all_vxl_pos)} list(set(phase_identifier) {list(set(phase_identifier))}"
+            )
             n_max_phase_identifier = np.max(tuple(set(phase_identifier)))
             h5r.close()
 
@@ -70,22 +84,36 @@ class ProcessClustering:
             grp.attrs["NX_class"] = "NXprocess"
             h5w.close()
 
-            for target_phase in np.arange(0, n_max_phase_identifier + 1, dtype=np.uint32):
+            for target_phase in np.arange(
+                0, n_max_phase_identifier + 1, dtype=np.uint32
+            ):
                 print(f"\tLoop {target_phase}")
                 if target_phase > n_max_phase_identifier:
-                    raise ValueError(f"Argument target_phase needs to be <= {n_max_phase_identifier} !")
+                    raise ValueError(
+                        f"Argument target_phase needs to be <= {n_max_phase_identifier} !"
+                    )
                 trg_vxl_pos = all_vxl_pos[phase_identifier == target_phase, :]
-                trg_vxl_idx = np.asarray(np.linspace(0, np.shape(all_vxl_pos)[0], num=np.shape(all_vxl_pos)[0], endpoint=True), APT_UINT)[phase_identifier == target_phase]
+                trg_vxl_idx = np.asarray(
+                    np.linspace(
+                        0,
+                        np.shape(all_vxl_pos)[0],
+                        num=np.shape(all_vxl_pos)[0],
+                        endpoint=True,
+                    ),
+                    APT_UINT,
+                )[phase_identifier == target_phase]
                 print(f"\tnp.shape(trg_vxl_pos) {np.shape(trg_vxl_pos)}")
                 print(f"\tnp.shape(trg_vxl_idx) {np.shape(trg_vxl_idx)}")
 
-                db = DBSCAN(eps=eps,
-                            min_samples=min_samples,
-                            metric="euclidean",
-                            algorithm="kd_tree",
-                            leaf_size=10,
-                            p=None,
-                            n_jobs=-1).fit(trg_vxl_pos)
+                db = DBSCAN(
+                    eps=eps,
+                    min_samples=min_samples,
+                    metric="euclidean",
+                    algorithm="kd_tree",
+                    leaf_size=10,
+                    p=None,
+                    n_jobs=-1,
+                ).fit(trg_vxl_pos)
                 # print(np.unique(db.core_sample_indices_))
                 # core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
                 # core_samples_mask[db.core_sample_indices_] = True
@@ -100,9 +128,21 @@ class ProcessClustering:
                 grp.attrs["NX_class"] = "NXprocess"
                 dst = h5w.create_dataset(f"{trg}/epsilon", data=np.float64(eps))
                 dst.attrs["units"] = "nm"
-                dst = h5w.create_dataset(f"{trg}/min_samples", data=np.uint32(min_samples))
-                dst = h5w.create_dataset(f"{trg}/label", compression="gzip", compression_opts=1, data=np.asarray(db.labels_, np.int64))
-                dst = h5w.create_dataset(f"{trg}/voxel", compression="gzip", compression_opts=1, data=np.asarray(trg_vxl_idx, APT_UINT))
+                dst = h5w.create_dataset(
+                    f"{trg}/min_samples", data=np.uint32(min_samples)
+                )
+                dst = h5w.create_dataset(
+                    f"{trg}/label",
+                    compression="gzip",
+                    compression_opts=1,
+                    data=np.asarray(db.labels_, np.int64),
+                )
+                dst = h5w.create_dataset(
+                    f"{trg}/voxel",
+                    compression="gzip",
+                    compression_opts=1,
+                    data=np.asarray(trg_vxl_idx, APT_UINT),
+                )
                 h5w.close()
 
                 del trg_vxl_pos

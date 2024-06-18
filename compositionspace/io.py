@@ -10,7 +10,9 @@ def get_reconstructed_positions(file_path: str = "", verbose: bool = False):
     with h5py.File(file_path, "r") as h5r:
         trg = "/entry1/atom_probe/reconstruction/reconstructed_positions"
         xyz = h5r[trg][:, :]
-        print(f"Load reconstructed positions shape {np.shape(xyz)}, type {type(xyz)}, dtype {xyz.dtype}")
+        print(
+            f"Load reconstructed positions shape {np.shape(xyz)}, type {type(xyz)}, dtype {xyz.dtype}"
+        )
         return (xyz, "nm")
 
 
@@ -19,14 +21,17 @@ def get_ranging_info(file_path: str = "", verbose: bool = False):
     with h5py.File(file_path, "r") as h5r:
         trg = "/entry1/atom_probe/ranging/peak_identification"
         n_ion_types = len(h5r[trg])
-        iontypes = {}
+        iontypes: dict = {}
         for ion_id in np.arange(0, n_ion_types):
-            iontypes[f"ion{ion_id}"] = (h5r[f"{trg}/ion{ion_id}/name"][()].decode("utf8"), np.uint8(ion_id))
+            iontypes[f"ion{ion_id}"] = (
+                h5r[f"{trg}/ion{ion_id}/name"][()].decode("utf8"),
+                np.uint8(ion_id),
+            )
         print(f"{n_ion_types} iontypes distinguished:")
         if verbose:
             for key, val in iontypes.items():
                 print(f"\t{key}, {val}")
-        chrg_agnostic_iontypes = {}
+        chrg_agnostic_iontypes: dict = {}
         elements = set()
         for key, value in iontypes.items():
             chrg_agnostic_name = value[0].replace("+", "").replace("-", "").strip()
@@ -54,5 +59,7 @@ def get_iontypes(file_path: str = "", verbose: bool = False):
     with h5py.File(file_path, "r") as h5r:
         trg = "/entry1/iontypes/iontypes"
         ityp = h5r[trg][:]
-        print(f"Load ranged iontypes shape {np.shape(ityp)}, type {type(ityp)}, dtype {ityp.dtype}")
+        print(
+            f"Load ranged iontypes shape {np.shape(ityp)}, type {type(ityp)}, dtype {ityp.dtype}"
+        )
         return (ityp, None)

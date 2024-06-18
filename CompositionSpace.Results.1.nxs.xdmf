@@ -42,9 +42,9 @@
           CompositionSpace.Results.1.nxs:/entry1/voxelization/element5/counts
         </DataItem>
       </Attribute>
-      <Attribute Name="icopt1" AttributeType="Scalar" Center="Node">
+      <Attribute Name="icopt0" AttributeType="Scalar" Center="Node">
         <DataItem Dimensions="45 44 80" NumberType="Int" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis1/y_pred
+          CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis0/y_pred
         </DataItem>
       </Attribute>
       <Attribute Name="icopt1" AttributeType="Scalar" Center="Node">
@@ -65,11 +65,6 @@
       <Attribute Name="icopt4" AttributeType="Scalar" Center="Node">
         <DataItem Dimensions="45 44 80" NumberType="Int" Precision="8" Format="HDF">
           CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis4/y_pred
-        </DataItem>
-      </Attribute>
-      <Attribute Name="icopt5" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="Int" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis5/y_pred
         </DataItem>
       </Attribute>
     </Grid>
