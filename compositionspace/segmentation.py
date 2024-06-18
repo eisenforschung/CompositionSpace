@@ -47,9 +47,10 @@ class ProcessSegmentation():
                     chem_class_idx = int(grpnm.replace("element", ""))
                     etyp_cnts = np.asarray(h5r[f"{src}/{grpnm}/counts"][:], np.float64)
                     if np.shape(etyp_cnts) == np.shape(total_cnts):
-                        self.composition_matrix[:, chem_class_idx] = np.divide(etyp_cnts, total_cnts, where=total_cnts >= (1. - EPSILON))
-                        mask = np.where(self.composition_matrix[:, chem_class_idx] < EPSILON) or ~np.isfinite(self.composition_matrix[:, chem_class_idx])
-                        self.composition_matrix[mask, chem_class_idx] = 0.
+                        self.composition_matrix[:, chem_class_idx] = np.divide(etyp_cnts,
+                                                                               total_cnts,
+                                                                               out=self.composition_matrix[:, chem_class_idx],
+                                                                               where=total_cnts >= (1. - EPSILON))
                     else:
                         raise ValueError(f"Groupname {grpnm}, length of counts array for chemical class {chem_class_idx} needs to be the same as of counts!")
 
@@ -87,6 +88,9 @@ class ProcessSegmentation():
 
     def perform_bics_minimization_and_write_results(self):
         self.get_composition_matrix()
+
+        self.X_train = None
+        self.X_train = self.composition_matrix
 
         with h5py.File(self.config["results_file_path"], "a") as h5w:
             trg = f"/entry{self.config['entry_id']}/segmentation/ic_opt"  # information criterion optimization (minimization)
