@@ -15,3 +15,4 @@ traj.*
 *.h5
 *.vtu
 *.png
+./output/
