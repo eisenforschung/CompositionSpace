@@ -16,3 +16,4 @@ traj.*
 *.vtu
 *.png
 ./output/
+./tests/data/

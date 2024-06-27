@@ -14,5 +14,5 @@ ml_models:
       max_depth: 0
       n_estimators: 0
    DBScan:
-      eps: 3
-      min_samples: 5
+      eps: 5
+      min_samples: 25

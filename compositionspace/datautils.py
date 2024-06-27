@@ -230,7 +230,7 @@ class DataPreparation:
                 
             if filename.endswith(".RRNG"):
                 path = os.path.join(self.params["input_path"], filename) 
-                ions,rrngs = self.get_rrng(rrange_file)
+                ions,rrngs = self.get_rrng(path)
                 
         return (df_Mass_POS_lst, file_name_lst, ions, rrngs) 
 
@@ -278,6 +278,7 @@ class DataPreparation:
             group1 = hdf.create_group("group_xyz_Da_spec")
             group1.attrs["columns"] = ["x","y","z","Da","spec"]
             group1.attrs["spec_name_order"] = list(c)
+            self.chemical_species = list(c)                                 # Added A.S. 2024.06.25
             sublength_x= abs((max(sorted_df['z'])-min(sorted_df['z']))/self.params["n_big_slices"])
             
             start = min(sorted_df['z'])
