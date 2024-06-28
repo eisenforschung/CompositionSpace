@@ -1,11 +1,12 @@
 import os
-import h5py
 import yaml
+import h5py
 import numpy as np
+import flatdict as fd
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
-from compositionspace.utils import EPSILON, APT_UINT
+from compositionspace.utils import APT_UINT, get_composition_matrix
 
 
 class ProcessSegmentation:
@@ -21,7 +22,7 @@ class ProcessSegmentation:
         self.config = {}
         if os.path.exists(config_file_path):
             with open(config_file_path, "r") as yml:
-                self.config = yaml.safe_load(yml)
+                self.config = fd.FlatDict(yaml.safe_load(yml), delimiter="/")
         else:
             raise IOError(f"File {config_file_path} does not exist!")
         if os.path.exists(results_file_path):
@@ -35,41 +36,11 @@ class ProcessSegmentation:
         self.composition_matrix = None
         self.X_train = None
 
-    def get_composition_matrix(self):
-        """Compute (n_ions, n_chemical_class) composition matrix from per-class counts."""
-        self.composition_matrix = None
-        with h5py.File(self.config["results_file_path"], "r") as h5r:
-            src = f"/entry{self.config['entry_id']}/voxelization"
-            self.n_chem_classes = sum(
-                1 for grpnm in h5r[f"{src}"] if grpnm.startswith("element")
-            )
-            print(f"Composition matrix has {self.n_chem_classes} chemical classes")
-
-            total_cnts = np.asarray(h5r[f"{src}/counts"][:], np.float64)
-            self.composition_matrix = np.zeros(
-                [np.shape(total_cnts)[0], self.n_chem_classes + 1], np.float64
-            )
-
-            for grpnm in h5r[f"{src}"]:
-                if grpnm.startswith("element"):
-                    chem_class_idx = int(grpnm.replace("element", ""))
-                    etyp_cnts = np.asarray(h5r[f"{src}/{grpnm}/counts"][:], np.float64)
-                    if np.shape(etyp_cnts) == np.shape(total_cnts):
-                        self.composition_matrix[:, chem_class_idx] = np.divide(
-                            etyp_cnts,
-                            total_cnts,
-                            out=self.composition_matrix[:, chem_class_idx],
-                            where=total_cnts >= (1.0 - EPSILON),
-                        )
-                    else:
-                        raise ValueError(
-                            f"Groupname {grpnm}, length of counts array for chemical class {chem_class_idx} needs to be the same as of counts!"
-                        )
-
     def perform_pca_and_write_results(self):
         """Perform PCA of n_chemical_class-dimensional correlation."""
-        self.get_composition_matrix()
-        # TODO:export composition matrix here
+        self.composition_matrix, self.n_chem_classes = get_composition_matrix(
+            self.config["results_file_path"], self.config["entry_id"]
+        )
 
         self.X_train = None
         self.X_train = self.composition_matrix
@@ -116,7 +87,9 @@ class ProcessSegmentation:
 
     def perform_bics_minimization_and_write_results(self):
         """Perform Gaussian mixture model supervised ML with (Bayesian) IC minimization."""
-        self.get_composition_matrix()
+        self.composition_matrix, self.n_chem_classes = get_composition_matrix(
+            self.config["results_file_path"], self.config["entry_id"]
+        )
 
         self.X_train = None
         self.X_train = self.composition_matrix
@@ -130,7 +103,9 @@ class ProcessSegmentation:
         # gm_scores = []
         aics = []
         bics = []  # y_pred are stored directly into the HDF5 file
-        n_clusters_queue = list(range(1, self.config["n_max_ic_cluster"] + 1))
+        n_clusters_queue = list(
+            range(1, self.config["segmentation/n_max_ic_cluster"] + 1)
+        )
         for n_bics_cluster in n_clusters_queue:
             # why does the following result look entirely different by orders of magnitude if you change range to np.arange and drop the list creation?
             # floating point versus integer numbers, this needs to be checked !!!
@@ -176,8 +151,8 @@ class ProcessSegmentation:
             axis_dim = np.asarray(
                 np.linspace(
                     1,
-                    self.config["n_max_ic_cluster"],
-                    num=self.config["n_max_ic_cluster"],
+                    self.config["segmentation/n_max_ic_cluster"],
+                    num=self.config["segmentation/n_max_ic_cluster"],
                     endpoint=True,
                 ),
                 APT_UINT,

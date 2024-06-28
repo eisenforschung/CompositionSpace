@@ -2,8 +2,9 @@
 
 import os
 import yaml
-import numpy as np
 import h5py
+import numpy as np
+import flatdict as fd
 from sklearn.cluster import DBSCAN
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
 from compositionspace.utils import APT_UINT
@@ -22,7 +23,7 @@ class ProcessClustering:
         self.config = {}
         if os.path.exists(config_file_path):
             with open(config_file_path, "r") as yml:
-                self.config = yaml.safe_load(yml)
+                self.config = fd.FlatDict(yaml.safe_load(yml), delimiter="/")
         else:
             raise IOError(f"File {config_file_path} does not exist!")
         if not os.path.exists(results_file_path):
@@ -37,9 +38,8 @@ class ProcessClustering:
 
     def run_and_write_results(self):
         """Perform DBScan clustering for each Gaussian mixture model result."""
-        # n_ic_cluster = self.config["n_sel_ic_cluster"]
-        eps = self.config["ml_models"]["DBScan"]["eps"]
-        min_samples = self.config["ml_models"]["DBScan"]["min_samples"]
+        eps = self.config["clustering/dbscan/eps"]
+        min_samples = self.config["clustering/dbscan/min_samples"]
         print(f"DBScan configuration: eps {eps} nm, min_samples {min_samples}")
 
         h5r = h5py.File(self.config["results_file_path"], "r")

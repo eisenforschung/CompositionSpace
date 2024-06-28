@@ -1,17 +1,15 @@
 # input_path: tests/data
 # output_path: tests/output
-voxel_edge_length: 1
-n_max_ic_cluster: 5
-# n_sel_ic_cluster: 5
-ml_models:
-   # name: GaussianMixture
-   # GaussianMixture:
-   #   n_components: 2
-   #   max_iter: 100000
-   #   verbose: 0
-   # RandomForest:
-   #   max_depth: 0
-   #   n_estimators: 0
-   DBScan:
-      eps: 3
-      min_samples: 5
+voxelization:
+  edge_length: 1
+autophase:
+  initial_guess: 3
+  trunc_species: 2
+  random_forest_classifier:
+segmentation:
+  n_max_ic_cluster: 5
+  gaussian_mixture:
+clustering:
+  dbscan:
+    eps: 3
+    min_samples: 5

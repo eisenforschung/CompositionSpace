@@ -2,10 +2,16 @@
 
 import os
 import yaml
-import numpy as np
 import h5py
+import numpy as np
+import flatdict as fd
 import datetime as dt
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
+from compositionspace.io import (
+    get_reconstructed_positions,
+    get_iontypes,
+    get_ranging_info,
+)
 from compositionspace.utils import (
     floor_to_multiple,
     ceil_to_multiple,
@@ -30,7 +36,7 @@ class ProcessPreparation:
         self.config = {}
         if os.path.exists(config_file_path):
             with open(config_file_path, "r") as yml:
-                self.config = yaml.safe_load(yml)
+                self.config = fd.FlatDict(yaml.safe_load(yml), delimiter="/")
         else:
             raise IOError(f"File {config_file_path} does not exist!")
         self.config["config_file_path"] = config_file_path
@@ -102,7 +108,7 @@ class ProcessPreparation:
         n_ions = np.shape(xyz)[0]
         self.voxel_identifier = np.asarray(np.zeros(n_ions), APT_UINT)
         print(f"shape {np.shape(self.voxel_identifier)}")
-        dedge = self.config["voxel_edge_length"]  # cubic voxels, nm
+        dedge = self.config["voxelization/edge_length"]  # cubic voxels, nm
         for dim in [0, 1, 2]:  # 0 -> x, 1 -> y, 2 -> z
             print(f"dim {dim}")
             self.aabb3d[dim, 0] = floor_to_multiple(
@@ -211,7 +217,7 @@ class ProcessPreparation:
             )
             dst.attrs["units"] = "nm"
             dst = h5w.create_dataset(f"{trg}/symmetry", data="cubic")
-            dedge = self.config["voxel_edge_length"]
+            dedge = self.config["voxelization/edge_length"]
             dst = h5w.create_dataset(
                 f"{trg}/cell_dimensions",
                 data=np.asarray([dedge, dedge, dedge], np.float64),
@@ -320,6 +326,20 @@ class ProcessPreparation:
             dst = h5w.create_dataset(
                 f"{trg}/counts", compression="gzip", compression_opts=1, data=total_cnts
             )
+
+    def run(self, recon_file_path: str, range_file_path: str):
+        xyz_val, xyz_unit = get_reconstructed_positions(recon_file_path)
+        ityp_info, nochrg_ityp_info, elements = get_ranging_info(
+            recon_file_path, verbose=True
+        )
+        ityp_val, ityp_unit = get_iontypes(range_file_path)
+
+        self.init_ranging(ityp_info, elements)
+        self.write_init_results()
+        self.define_voxelization_grid(xyz_val)
+        self.define_lookup_table(ityp_val)
+        self.write_voxelization_grid_info()
+        self.write_voxelization_results()
 
         # For a large number of voxels, say a few million and dozens of iontypes storing all
         # ityp_weights in main memory might not be useful, instead these should be stored in the HDF5 file
