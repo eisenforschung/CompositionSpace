@@ -12,15 +12,16 @@ git checkout nexus-io
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
-
+<!--
 ### Installation for users via [PyPI](https://pypi.org/)
 
-Compositionspace can be installed using:
+CompositionSpace can be installed using:
 
 ```
 pip install compositionspace
-```
+```-->
 
+<!--
 ### Installation for users via [Conda](https://anaconda.org/)
 
 It is **strongly** recommended to install and use `CompositionSpace` within a conda environment. To see how you can install conda see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
@@ -50,16 +51,17 @@ then, install `compositionspace` using,
 python setup.py install
 ```
 The environment is now set up to run calphy.
+-->
 
 ## Examples
 
 For an example of the complete workflow using `Full_Workflow.ipynb`.
 
-The provided dataset is a small one for testing purposes, which is also accessible here:
+[The usa_denton_smith dataset is available here](https://zenodo.org/records/7986279/files/usa_denton_smith_apav_si.zip?download=1)
+[Further datasets are available here](https://dx.doi.org/10.25833/3ge0-y420)
 
-Ceguerra, AV (2021) Supplementary material: APT test cases.
-Available at http://dx.doi.org/10.25833/3ge0-y420
-
+<!--
 ## Documentation
 
 Documentation is available [here](https://compositionspace.readthedocs.io/en/latest/).
+-->

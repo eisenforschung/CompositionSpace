@@ -1,0 +1,22 @@
+# v0.1 release candidate
+name: compositionspace
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - h5py
+  - scikit-learn
+  - pyyaml
+  - flatdict
+  - ifes-apt-tc-data-modeling>=0.2.1
+  # - matplotlib
+  # - pytest
+  # - pandas
+  # - numba
+  # - tqdm
+  # - pyevtk
+  # - ipywidgets
+  # - ipyvtklink
+  # - pyvista
+  # - ipywidgets
+  # - panel

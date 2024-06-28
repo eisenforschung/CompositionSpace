@@ -36,7 +36,7 @@ class ProcessClustering:
         self.verbose = verbose
         self.version = get_repo_last_commit()
 
-    def run_and_write_results(self):
+    def run(self):
         """Perform DBScan clustering for each Gaussian mixture model result."""
         eps = self.config["clustering/dbscan/eps"]
         min_samples = self.config["clustering/dbscan/min_samples"]
@@ -57,6 +57,9 @@ class ProcessClustering:
         if self.config["autophase/use"]:
             sequence_idx += 1
         dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(sequence_idx))
+        trg = f"/entry{self.config['entry_id']}/clustering/ic_opt"
+        grp = h5w.create_group(trg)
+        grp.attrs["NX_class"] = "NXobject"
         h5w.close()
 
         # n_ic_runs = sum(1 for grpnm in ic_results_group_names if grpnm.startswith("cluster_analysis"))

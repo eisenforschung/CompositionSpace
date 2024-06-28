@@ -53,7 +53,7 @@ def get_composition_matrix(file_path: str, entry_id: int = 1):
         )
         print(f"Composition matrix has {n_chem_classes} elements")
 
-        total_cnts = np.asarray(h5r[f"{src}/counts"][:], APT_UINT)
+        total_cnts = np.asarray(h5r[f"{src}/weight"][:], APT_UINT)
         composition_matrix = np.zeros(
             [np.shape(total_cnts)[0], n_chem_classes + 1], np.float64
         )
@@ -61,7 +61,7 @@ def get_composition_matrix(file_path: str, entry_id: int = 1):
             if grpnm.startswith("element"):
                 chem_class_idx = int(grpnm.replace("element", ""))
                 print(f"Populating composition table for element{chem_class_idx}")
-                etyp_cnts = np.asarray(h5r[f"{src}/{grpnm}/counts"][:], APT_UINT)
+                etyp_cnts = np.asarray(h5r[f"{src}/{grpnm}/weight"][:], APT_UINT)
 
                 if np.shape(etyp_cnts) == np.shape(total_cnts):
                     # cumsum_cnts += etyp_cnts

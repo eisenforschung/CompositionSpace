@@ -315,7 +315,7 @@ class ProcessPreparation:
             grp.attrs["NX_class"] = "NXion"
             dst = h5w.create_dataset(f"{trg}/name", data=str(symbol))
             dst = h5w.create_dataset(
-                f"{trg}/counts",
+                f"{trg}/weight",
                 compression="gzip",
                 compression_opts=1,
                 data=elem_cnts[symbol],
@@ -329,7 +329,7 @@ class ProcessPreparation:
         # total atom/molecular ion contribution/intensity/count in each voxel/cell
         trg = f"/entry{self.config['entry_id']}/voxelization"
         dst = h5w.create_dataset(
-            f"{trg}/counts", compression="gzip", compression_opts=1, data=total_cnts
+            f"{trg}/weight", compression="gzip", compression_opts=1, data=total_cnts
         )
         h5w.close()
 
