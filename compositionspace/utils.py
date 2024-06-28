@@ -9,6 +9,8 @@ from ase.data import chemical_symbols
 # numerics
 EPSILON = 1.0e-6
 APT_UINT = np.uint64
+PRNG_SEED = 42
+
 
 
 def ceil_to_multiple(number, multiple):
@@ -50,7 +52,7 @@ def get_composition_matrix(file_path: str, entry_id: int = 1):
         n_chem_classes = sum(
             1 for grpnm in h5r[f"{src}"] if grpnm.startswith("element")
         )
-        print(f"Composition matrix has {n_chem_classes} chemical classes")
+        print(f"Composition matrix has {n_chem_classes} elements")
 
         total_cnts = np.asarray(h5r[f"{src}/counts"][:], APT_UINT)
         composition_matrix = np.zeros(
@@ -59,7 +61,7 @@ def get_composition_matrix(file_path: str, entry_id: int = 1):
         for grpnm in h5r[f"{src}"]:
             if grpnm.startswith("element"):
                 chem_class_idx = int(grpnm.replace("element", ""))
-                print(f"Populating composition table column {chem_class_idx}")
+                print(f"Populating composition table for element{chem_class_idx}")
                 etyp_cnts = np.asarray(h5r[f"{src}/{grpnm}/counts"][:], APT_UINT)
 
                 if np.shape(etyp_cnts) == np.shape(total_cnts):
@@ -72,7 +74,7 @@ def get_composition_matrix(file_path: str, entry_id: int = 1):
                     )
                 else:
                     raise ValueError(
-                        f"Groupname {grpnm}, length of counts array for chemical class {chem_class_idx} needs to be the same as of counts!"
+                        f"Groupname {grpnm}, length of counts array for element{chem_class_idx} needs to be the same as of counts!"
                     )
         return composition_matrix, n_chem_classes
 

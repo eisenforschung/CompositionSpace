@@ -56,34 +56,35 @@ class ProcessPreparation:
 
     def write_init_results(self):
         """Init the NeXus/HDF5 results file."""
-        with h5py.File(self.config["results_file_path"], "w") as h5w:
-            h5w.attrs["NX_class"] = "NXroot"
-            h5w.attrs["file_name"] = self.config["results_file_path"]
-            h5w.attrs["file_time"] = dt.datetime.now(
-                dt.timezone.utc
-            ).isoformat()  # .replace("+00:00", "Z")
-            # /@file_update_time
-            h5w.attrs["NeXus_repository"] = (
-                f"https://github.com/FAIRmat-NFDI/nexus_definitions/blob/{get_nexus_version_hash()}"
-            )
-            h5w.attrs["NeXus_version"] = get_nexus_version()
-            h5w.attrs["HDF5_version"] = ".".join(map(str, h5py.h5.get_libversion()))
-            h5w.attrs["h5py_version"] = h5py.__version__
+        h5w = h5py.File(self.config["results_file_path"], "w")
+        h5w.attrs["NX_class"] = "NXroot"
+        h5w.attrs["file_name"] = self.config["results_file_path"]
+        h5w.attrs["file_time"] = dt.datetime.now(
+            dt.timezone.utc
+        ).isoformat()  # .replace("+00:00", "Z")
+        # /@file_update_time
+        h5w.attrs["NeXus_repository"] = (
+            f"https://github.com/FAIRmat-NFDI/nexus_definitions/blob/{get_nexus_version_hash()}"
+        )
+        h5w.attrs["NeXus_version"] = get_nexus_version()
+        h5w.attrs["HDF5_version"] = ".".join(map(str, h5py.h5.get_libversion()))
+        h5w.attrs["h5py_version"] = h5py.__version__
 
-            trg = f"/entry{self.config['entry_id']}"
-            grp = h5w.create_group(trg)
-            grp.attrs["NX_class"] = "NXentry"
-            dst = h5w.create_dataset(
-                f"{trg}/definition", data="NXapm_compositionspace_results"
-            )
-            trg = f"/entry{self.config['entry_id']}/program"
-            grp = h5w.create_group(trg)
-            grp.attrs["NX_class"] = "NXprogram"
-            dst = h5w.create_dataset(f"{trg}/program", data="compositionspace")
-            dst.attrs["version"] = get_repo_last_commit()
-            dst.attrs["url"] = (
-                f"https://github.com/eisenforschung/CompositionSpace/blob/{get_repo_last_commit()}"
-            )
+        trg = f"/entry{self.config['entry_id']}"
+        grp = h5w.create_group(trg)
+        grp.attrs["NX_class"] = "NXentry"
+        dst = h5w.create_dataset(
+            f"{trg}/definition", data="NXapm_compositionspace_results"
+        )
+        trg = f"/entry{self.config['entry_id']}/program"
+        grp = h5w.create_group(trg)
+        grp.attrs["NX_class"] = "NXprogram"
+        dst = h5w.create_dataset(f"{trg}/program", data="compositionspace")
+        dst.attrs["version"] = get_repo_last_commit()
+        dst.attrs["url"] = (
+            f"https://github.com/eisenforschung/CompositionSpace/blob/{get_repo_last_commit()}"
+        )
+        h5w.close()
 
     def define_voxelization_grid(self, xyz):
         """Define grid with which to discretize reconstructed ion positions and voxelize."""
@@ -196,71 +197,72 @@ class ProcessPreparation:
             raise IOError(
                 f"Results file {self.config['results_file_path']} does not exist!"
             )
-        with h5py.File(self.config["results_file_path"], "a") as h5w:
-            trg = f"/entry{self.config['entry_id']}/voxelization"
-            grp = h5w.create_group(trg)
-            grp.attrs["NX_class"] = "NXprocess"
-            dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint32(1))
+        h5w = h5py.File(self.config["results_file_path"], "a")
+        trg = f"/entry{self.config['entry_id']}/voxelization"
+        grp = h5w.create_group(trg)
+        grp.attrs["NX_class"] = "NXprocess"
+        dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(1))
 
-            trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
-            grp = h5w.create_group(trg)
-            grp.attrs["NX_class"] = "NXcg_grid"
-            dst = h5w.create_dataset(f"{trg}/dimensionality", data=np.uint32(3))
-            c = np.prod(self.extent)
-            dst = h5w.create_dataset(f"{trg}/cardinality", data=np.uint32(c))
-            dst = h5w.create_dataset(
-                f"{trg}/origin",
-                data=np.asarray(
-                    [self.aabb3d[0, 0], self.aabb3d[1, 0], self.aabb3d[2, 0]],
-                    np.float64,
-                ),
-            )
-            dst.attrs["units"] = "nm"
-            dst = h5w.create_dataset(f"{trg}/symmetry", data="cubic")
-            dedge = self.config["voxelization/edge_length"]
-            dst = h5w.create_dataset(
-                f"{trg}/cell_dimensions",
-                data=np.asarray([dedge, dedge, dedge], np.float64),
-            )
-            dst.attrs["units"] = "nm"
-            dst = h5w.create_dataset(
-                f"{trg}/extent", data=np.asarray(self.extent, np.uint32)
-            )
-            identifier_offset = 0  # we count cells starting from this value
-            dst = h5w.create_dataset(
-                f"{trg}/identifier_offset", data=np.uint64(identifier_offset)
-            )
+        trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
+        grp = h5w.create_group(trg)
+        grp.attrs["NX_class"] = "NXcg_grid"
+        dst = h5w.create_dataset(f"{trg}/dimensionality", data=np.uint64(3))
+        c = np.prod(self.extent)
+        dst = h5w.create_dataset(f"{trg}/cardinality", data=np.uint64(c))
+        dst = h5w.create_dataset(
+            f"{trg}/origin",
+            data=np.asarray(
+                [self.aabb3d[0, 0], self.aabb3d[1, 0], self.aabb3d[2, 0]],
+                np.float64,
+            ),
+        )
+        dst.attrs["units"] = "nm"
+        dst = h5w.create_dataset(f"{trg}/symmetry", data="cubic")
+        dedge = self.config["voxelization/edge_length"]
+        dst = h5w.create_dataset(
+            f"{trg}/cell_dimensions",
+            data=np.asarray([dedge, dedge, dedge], np.float64),
+        )
+        dst.attrs["units"] = "nm"
+        dst = h5w.create_dataset(
+            f"{trg}/extent", data=np.asarray(self.extent, np.uint32)
+        )
+        identifier_offset = 0  # we count cells starting from this value
+        dst = h5w.create_dataset(
+            f"{trg}/identifier_offset", data=np.uint64(identifier_offset)
+        )
 
-            voxel_id = identifier_offset
-            position = np.zeros([c, 3], np.float64)
-            for k in np.arange(0, self.extent[2]):
-                z = self.aabb3d[2, 0] + (0.5 + k) * dedge
-                for j in np.arange(0, self.extent[1]):
-                    y = self.aabb3d[1, 0] + (0.5 + j) * dedge
-                    for i in np.arange(0, self.extent[0]):
-                        x = self.aabb3d[0, 0] + (0.5 + i) * dedge
-                        position[voxel_id, :] = [x, y, z]
-                        voxel_id += 1
-            dst = h5w.create_dataset(
-                f"{trg}/position", compression="gzip", compression_opts=1, data=position
-            )
-            dst.attrs["units"] = "nm"
-            del position
+        voxel_id = identifier_offset
+        position = np.zeros([c, 3], np.float64)
+        for k in np.arange(0, self.extent[2]):
+            z = self.aabb3d[2, 0] + (0.5 + k) * dedge
+            for j in np.arange(0, self.extent[1]):
+                y = self.aabb3d[1, 0] + (0.5 + j) * dedge
+                for i in np.arange(0, self.extent[0]):
+                    x = self.aabb3d[0, 0] + (0.5 + i) * dedge
+                    position[voxel_id, :] = [x, y, z]
+                    voxel_id += 1
+        dst = h5w.create_dataset(
+            f"{trg}/position", compression="gzip", compression_opts=1, data=position
+        )
+        dst.attrs["units"] = "nm"
+        del position
 
-            voxel_id = identifier_offset
-            coordinate = np.zeros([c, 3], np.uint32)
-            for k in np.arange(0, self.extent[2]):
-                for j in np.arange(0, self.extent[1]):
-                    for i in np.arange(0, self.extent[0]):
-                        coordinate[voxel_id, :] = [i, j, k]
-                        voxel_id += 1
-            dst = h5w.create_dataset(
-                f"{trg}/coordinate",
-                compression="gzip",
-                compression_opts=1,
-                data=coordinate,
-            )
-            del coordinate
+        voxel_id = identifier_offset
+        coordinate = np.zeros([c, 3], np.uint32)
+        for k in np.arange(0, self.extent[2]):
+            for j in np.arange(0, self.extent[1]):
+                for i in np.arange(0, self.extent[0]):
+                    coordinate[voxel_id, :] = [i, j, k]
+                    voxel_id += 1
+        dst = h5w.create_dataset(
+            f"{trg}/coordinate",
+            compression="gzip",
+            compression_opts=1,
+            data=coordinate,
+        )
+        del coordinate
+        h5w.close()
 
     def write_voxelization_results(self):
         """Perform voxelization and write results to NeXus/HDF5."""
@@ -270,62 +272,66 @@ class ProcessPreparation:
             )
 
         c = np.prod(self.extent)
+        elem_id = {}
         elem_cnts = {}
-        for symbol in self.elements:
+        for idx, symbol in enumerate(self.elements):
             elem_cnts[symbol] = np.zeros(c, APT_UINT)
+            elem_id[symbol] = idx
+        if self.verbose:
+            print(elem_cnts)
+            print(elem_id)
         total_cnts = np.zeros(c, APT_UINT)
 
-        with h5py.File(self.config["results_file_path"], "a") as h5w:
-            trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
+        h5w = h5py.File(self.config["results_file_path"], "a")
+        trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
+        dst = h5w.create_dataset(
+            f"{trg}/voxel_identifier",
+            compression="gzip",
+            compression_opts=1,
+            data=self.voxel_identifier,
+        )
+
+        for ityp, tpl in self.itypes.items():
+            if ityp == "ion0":
+                continue
+            print(f"{ityp}, {tpl}:")
+            multiplicities = get_chemical_element_multiplicities(tpl[0], verbose=True)
+
+            inds = np.argwhere(self.lu_ityp_voxel_id_evap_id["iontype"] == tpl[1])
+            offsets = (np.min(inds), np.max(inds))
+            for symbol, cnts in multiplicities.items():
+                for offset in np.arange(offsets[0], offsets[1] + 1):
+                    idx = self.lu_ityp_voxel_id_evap_id["voxel_id"][offset]
+                    elem_cnts[symbol][idx] += cnts
+                    # offsets are inclusive [min, max] indices to use on lu_ityp_voxel_id_evap_id !
+                    # alternatively, one could make two loops where in the first an offset lookup table is generated
+                    # after this point one can drop the iontype and evap_id columns from the lu_ityp_voxel_id_evap_id lookup table
+
+        for symbol in elem_cnts:
+            # atom/molecular ion-type-specific contribution/intensity/count in each voxel/cell
+            trg = f"/entry{self.config['entry_id']}/voxelization/element{elem_id[symbol] + 1}"
+            print(f"{trg}, {symbol}")
+            grp = h5w.create_group(f"{trg}")
+            grp.attrs["NX_class"] = "NXion"
+            dst = h5w.create_dataset(f"{trg}/name", data=str(symbol))
             dst = h5w.create_dataset(
-                f"{trg}/voxel_identifier",
+                f"{trg}/counts",
                 compression="gzip",
                 compression_opts=1,
-                data=self.voxel_identifier,
+                data=elem_cnts[symbol],
             )
-
-            for ityp, tpl in self.itypes.items():
-                if ityp == "ion0":
-                    continue
-                print(f"{ityp}, {tpl}:")
-                multiplicities = get_chemical_element_multiplicities(
-                    tpl[0], verbose=True
-                )
-
-                inds = np.argwhere(self.lu_ityp_voxel_id_evap_id["iontype"] == tpl[1])
-                offsets = (np.min(inds), np.max(inds))
-                for symbol, cnts in multiplicities.items():
-                    for offset in np.arange(offsets[0], offsets[1] + 1):
-                        idx = self.lu_ityp_voxel_id_evap_id["voxel_id"][offset]
-                        elem_cnts[symbol][idx] += cnts
-                        # offsets are inclusive [min, max] indices to use on lu_ityp_voxel_id_evap_id !
-                        # alternatively, one could make two loops where in the first an offset lookup table is generated
-                        # after this point one can drop the iontype and evap_id columns from the lu_ityp_voxel_id_evap_id lookup table
-
-            for idx, symbol in enumerate(elem_cnts):
-                # atom/molecular ion-type-specific contribution/intensity/count in each voxel/cell
-                trg = f"/entry{self.config['entry_id']}/voxelization/element{idx + 1}"
-                grp = h5w.create_group(f"{trg}")
-                grp.attrs["NX_class"] = "NXion"
-                dst = h5w.create_dataset(f"{trg}/charge_state", data=np.uint8(0))
-                dst = h5w.create_dataset(f"{trg}/name", data=symbol)
-                dst = h5w.create_dataset(
-                    f"{trg}/counts",
-                    compression="gzip",
-                    compression_opts=1,
-                    data=elem_cnts[symbol],
-                )
-                total_cnts += elem_cnts[symbol]
-                print(
-                    f"symbol {symbol}, idx {idx}, np.sum(elem_cnts[symbol]) {np.sum(elem_cnts[symbol])}, np.sum(total_cnts) {np.sum(total_cnts)}"
-                )
-            print(f"n_ions {self.n_ions}")
-
-            # total atom/molecular ion contribution/intensity/count in each voxel/cell
-            trg = f"/entry{self.config['entry_id']}/voxelization"
-            dst = h5w.create_dataset(
-                f"{trg}/counts", compression="gzip", compression_opts=1, data=total_cnts
+            total_cnts += elem_cnts[symbol]
+            print(
+                f"symbol {symbol}, idx {elem_id[symbol]}, np.sum(elem_cnts[symbol]) {np.sum(elem_cnts[symbol])}, np.sum(total_cnts) {np.sum(total_cnts)}"
             )
+        print(f"n_ions {self.n_ions}")
+
+        # total atom/molecular ion contribution/intensity/count in each voxel/cell
+        trg = f"/entry{self.config['entry_id']}/voxelization"
+        dst = h5w.create_dataset(
+            f"{trg}/counts", compression="gzip", compression_opts=1, data=total_cnts
+        )
+        h5w.close()
 
     def run(self, recon_file_path: str, range_file_path: str):
         xyz_val, xyz_unit = get_reconstructed_positions(recon_file_path)

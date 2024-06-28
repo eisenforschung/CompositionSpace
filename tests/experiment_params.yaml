@@ -3,6 +3,7 @@
 voxelization:
   edge_length: 1
 autophase:
+  use: true
   initial_guess: 3
   trunc_species: 2
   random_forest_classifier:

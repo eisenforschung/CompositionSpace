@@ -48,6 +48,7 @@ def get_ranging_info(file_path: str = "", verbose: bool = False):
             for key, val in chrg_agnostic_iontypes.items():
                 print(f"\t{key}, {val}")
         print(f"{len(elements)} elements distinguished:")
+        elements = np.sort(list(elements), kind="stable")
         if verbose:
             for symbol in elements:
                 print(symbol)
