@@ -12,7 +12,6 @@ APT_UINT = np.uint64
 PRNG_SEED = 42
 
 
-
 def ceil_to_multiple(number, multiple):
     return multiple * np.ceil(number / multiple)
 

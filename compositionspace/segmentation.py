@@ -143,11 +143,11 @@ class ProcessSegmentation:
             # why does the following result look entirely different by orders of magnitude if you change range to np.arange and drop the list creation?
             # floating point versus integer numbers, this needs to be checked !!!
             # again !!! even though now we are using list and range again the result appear random!!!???
-            # run sequentially first to assure 
+            # run sequentially first to assure
             print(f"GaussianMixture ML analysis with n_cluster {int(n_bics_cluster)}")
-            gm = GaussianMixture(n_components=int(n_bics_cluster),
-                                 random_state=PRNG_SEED,
-                                 verbose=0)
+            gm = GaussianMixture(
+                n_components=int(n_bics_cluster), random_state=PRNG_SEED, verbose=0
+            )
             gm.fit(X_train)
             y_pred = gm.predict(C_mod)
             # gm_scores.append(homogeneity_score(y, y_pred))

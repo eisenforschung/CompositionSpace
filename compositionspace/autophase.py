@@ -47,16 +47,14 @@ class ProcessAutomatedPhaseAssignment:
         gm = GaussianMixture(
             n_components=int(self.config["autophase/initial_guess"]),
             random_state=PRNG_SEED,
-            verbose=0
+            verbose=0,
         )
         gm.fit(X)
         y_pred = gm.predict(X)
 
         # https://stackoverflow.com/questions/70535224/how-to-reproduce-a-randomforestclassifier-when-random-state-uses-randomstate
         # Alaukik mind the above-mentioned discussion, here I just use your prototypic implementation which might not be ideal!
-        rf = RandomForestClassifier(n_estimators=100,
-                                    random_state=PRNG_SEED,
-                                    n_jobs=-1)
+        rf = RandomForestClassifier(n_estimators=100, random_state=PRNG_SEED, n_jobs=-1)
         rf.fit(X, y_pred)
 
         # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
