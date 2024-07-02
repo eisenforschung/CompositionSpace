@@ -1,11 +1,13 @@
 """Run step 4 of the workflow."""
 
 import os
-import yaml
+
+import flatdict as fd
 import h5py
 import numpy as np
-import flatdict as fd
+import yaml
 from sklearn.cluster import DBSCAN
+
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
 from compositionspace.utils import APT_UINT
 
@@ -89,6 +91,8 @@ class ProcessClustering:
             grp = h5w.create_group(trg)
             grp.attrs["NX_class"] = "NXprocess"
             h5w.close()
+
+            # generate summary representation how the voxel
 
             for target_phase in np.arange(
                 0, n_max_phase_identifier + 1, dtype=np.uint32

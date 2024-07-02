@@ -1,12 +1,15 @@
 import os
-import yaml
+
+import flatdict as fd
 import h5py
 import numpy as np
-import flatdict as fd
+import yaml
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
+
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
 from compositionspace.utils import APT_UINT, PRNG_SEED, get_composition_matrix
+from compositionspace.visualization import decorate_path_to_default_plot
 
 
 class ProcessSegmentation:
@@ -218,6 +221,11 @@ class ProcessSegmentation:
         )
         dst.attrs["long_name"] = (
             "Information criterion value"  # "Bayes information criterion", NX_DIMENSIONLESS
+        )
+        # make this result the NeXus default plot
+        decorate_path_to_default_plot(
+            h5w,
+            f"/entry{self.config['entry_id']}/segmentation/ic_opt/result",
         )
         h5w.close()
 

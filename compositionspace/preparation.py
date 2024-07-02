@@ -1,26 +1,26 @@
 """Run step 1 of the workflow."""
 
+import datetime as dt
 import os
-import yaml
+
+import flatdict as fd
 import h5py
 import numpy as np
-import flatdict as fd
-import datetime as dt
+import yaml
+
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
+from compositionspace.get_nexus_version import get_nexus_version, get_nexus_version_hash
 from compositionspace.io import (
-    get_reconstructed_positions,
     get_iontypes,
     get_ranging_info,
+    get_reconstructed_positions,
 )
 from compositionspace.utils import (
-    floor_to_multiple,
-    ceil_to_multiple,
     APT_UINT,
+    ceil_to_multiple,
+    floor_to_multiple,
     get_chemical_element_multiplicities,
 )
-from compositionspace.get_nexus_version import get_nexus_version, get_nexus_version_hash
-from compositionspace.visualization import write_xdmf
-
 
 # https://stackoverflow.com/questions/47182183/pandas-chained-assignment-warning-exception-handling
 # pd.options.mode.chained_assignment = None
@@ -161,7 +161,9 @@ class ProcessPreparation:
         else:
             raise ValueError("Voxelization grid has no cell!")
         self.extent = np.asarray(self.extent, np.uint64)
-        self.origin = np.asarray([self.aabb3d[0, 0], self.aabb3d[1, 0], self.aabb3d[2, 0]], np.float64)
+        self.origin = np.asarray(
+            [self.aabb3d[0, 0], self.aabb3d[1, 0], self.aabb3d[2, 0]], np.float64
+        )
 
     def define_lookup_table(self, itypes, evaporation_id: bool = False):
         """Define a lookup table for fast summary statistics of voxel contributions."""
@@ -329,7 +331,6 @@ class ProcessPreparation:
             f"{trg}/weight", compression="gzip", compression_opts=1, data=total_cnts
         )
         h5w.close()
-        write_xdmf(self.config["results_file_path"], self.extent, self.origin)
 
     def run(self, recon_file_path: str, range_file_path: str):
         xyz_val, xyz_unit = get_reconstructed_positions(recon_file_path)

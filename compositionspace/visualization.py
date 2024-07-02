@@ -7,6 +7,28 @@ import lxml.etree as et
 import numpy as np
 
 
+def decorate_path_to_default_plot(h5w, nxpath: str):
+    """Write @default attribute to point to the default plot in open HDF5 file."""
+    # an example for nxpath
+    # "/entry1/atom_probe/ranging/mass_to_charge_distribution/mass_spectrum"
+    if nxpath.count("/") == 0:
+        return
+    path = nxpath.split("/")
+    trg = "/"
+    for idx in np.arange(0, len(path) - 1):
+        symbol_s = path[idx + 1].find("[")
+        symbol_e = path[idx + 1].find("]")
+        if 0 <= symbol_s < symbol_e:
+            grp = h5w[f"{trg}"]
+            grp.attrs["@default"] = f"{path[idx + 1][symbol_s + 1:symbol_e]}"
+            trg += f"{path[idx + 1][symbol_s + 1:symbol_e]}/"
+        else:
+            grp = h5w[f"{trg}"]
+            grp.attrs["@default"] = f"{path[idx + 1]}"
+            trg += f"{path[idx + 1]}/"
+    return
+
+
 def link_to_hfive_data_item(
     xml_node_parent, hdf_location, dims=None, hdf_payload=None, item_name=None
 ):
@@ -109,7 +131,7 @@ def generate_xdmf_for_visualizing_content(file_path: str, entry_id: int = 1):
                     if f"{trg}/{grp}/name" in h5r and f"{trg}/{grp}/weight" in h5r:
                         attr = et.SubElement(grid_node, "Attribute")
                         attr.attrib["Name"] = (
-                            f"{grp}, {h5r[f"{trg}/{grp}/name"][()].decode("utf-8")}, weight"
+                            f"{h5r[f'{trg}/{grp}/name'][()].decode('utf-8')}, {grp.replace('element', '')}, weight"
                         )
                         attr.attrib["AttributeType"] = "Scalar"
                         attr.attrib["Center"] = "Node"
@@ -119,6 +141,27 @@ def generate_xdmf_for_visualizing_content(file_path: str, entry_id: int = 1):
                             hdf_payload=h5r[f"{trg}/{grp}/weight"][:],
                             dims=grid_metadata["extent"],
                         )
+        # add visualization for results of segmentation
+        trg = f"/entry{entry_id}/segmentation/ic_opt"
+        if f"{trg}" in h5r:
+            for grp in h5r[f"{trg}"].keys():
+                if grp.startswith("cluster_analysis"):
+                    if (
+                        f"{trg}/{grp}/n_ic_cluster" in h5r
+                        and f"{trg}/{grp}/y_pred" in h5r
+                    ):
+                        attr = et.SubElement(grid_node, "Attribute")
+                        attr.attrib["Name"] = (
+                            f"ic_opt, {grp.replace('cluster_analysis', '')}, y_pred"
+                        )
+                        attr.attrib["AttributeType"] = "Scalar"
+                        attr.attrib["Center"] = "Node"
+                        link_to_hfive_data_item(
+                            attr,
+                            f"{file_path}:{trg}/{grp}/y_pred",
+                            hdf_payload=h5r[f"{trg}/{grp}/y_pred"][:],
+                            dims=grid_metadata["extent"],
+                        )
 
     # finally, write composed XML tree to disk
     with open(f"{file_path}.xdmf", "w") as fp:
@@ -126,7 +169,7 @@ def generate_xdmf_for_visualizing_content(file_path: str, entry_id: int = 1):
             et.tostring(
                 et.ElementTree(root_node),
                 xml_declaration=True,
-                # encoding="utf-8",
+                encoding="utf-8",
                 doctype='<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',
                 pretty_print=True,
             ).decode("utf-8")
