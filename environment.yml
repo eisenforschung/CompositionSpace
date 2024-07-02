@@ -1,5 +1,5 @@
 # v0.1 release candidate
-name: compositionspace
+name: compositionspace_iuc09
 channels:
   - conda-forge
 dependencies:
@@ -10,6 +10,7 @@ dependencies:
   - flatdict
   - lxml
   - ifes-apt-tc-data-modeling>=0.2.1
+  - trimesh
   # - matplotlib
   # - pytest
   # - pandas
