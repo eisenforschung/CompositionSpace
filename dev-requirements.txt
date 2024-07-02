@@ -185,6 +185,8 @@ jupyterlab-widgets==3.0.10
     # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
+lxml==5.2.2
+    # via compositionspace (pyproject.toml)
 markupsafe==2.1.5
     # via
     #   jinja2

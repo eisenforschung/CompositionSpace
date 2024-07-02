@@ -19,6 +19,8 @@ from compositionspace.utils import (
     get_chemical_element_multiplicities,
 )
 from compositionspace.get_nexus_version import get_nexus_version, get_nexus_version_hash
+from compositionspace.visualization import write_xdmf
+
 
 # https://stackoverflow.com/questions/47182183/pandas-chained-assignment-warning-exception-handling
 # pd.options.mode.chained_assignment = None
@@ -91,6 +93,7 @@ class ProcessPreparation:
         # initialize extent (number of cells) along x, y, z axes
         self.n_ions = np.shape(xyz)[0]
         self.extent = [0, 0, 0]
+        self.origin = None
         # initialize min, max bounds for x, y, z
         self.aabb3d = np.reshape(
             [
@@ -157,6 +160,8 @@ class ProcessPreparation:
             print(f"np.prod(self.extent) {np.prod(self.extent)}")
         else:
             raise ValueError("Voxelization grid has no cell!")
+        self.extent = np.asarray(self.extent, np.uint64)
+        self.origin = np.asarray([self.aabb3d[0, 0], self.aabb3d[1, 0], self.aabb3d[2, 0]], np.float64)
 
     def define_lookup_table(self, itypes, evaporation_id: bool = False):
         """Define a lookup table for fast summary statistics of voxel contributions."""
@@ -209,13 +214,7 @@ class ProcessPreparation:
         dst = h5w.create_dataset(f"{trg}/dimensionality", data=np.uint64(3))
         c = np.prod(self.extent)
         dst = h5w.create_dataset(f"{trg}/cardinality", data=np.uint64(c))
-        dst = h5w.create_dataset(
-            f"{trg}/origin",
-            data=np.asarray(
-                [self.aabb3d[0, 0], self.aabb3d[1, 0], self.aabb3d[2, 0]],
-                np.float64,
-            ),
-        )
+        dst = h5w.create_dataset(f"{trg}/origin", data=self.origin)
         dst.attrs["units"] = "nm"
         dst = h5w.create_dataset(f"{trg}/symmetry", data="cubic")
         dedge = self.config["voxelization/edge_length"]
@@ -224,9 +223,7 @@ class ProcessPreparation:
             data=np.asarray([dedge, dedge, dedge], np.float64),
         )
         dst.attrs["units"] = "nm"
-        dst = h5w.create_dataset(
-            f"{trg}/extent", data=np.asarray(self.extent, np.uint32)
-        )
+        dst = h5w.create_dataset(f"{trg}/extent", data=self.extent)
         identifier_offset = 0  # we count cells starting from this value
         dst = h5w.create_dataset(
             f"{trg}/identifier_offset", data=np.uint64(identifier_offset)
@@ -249,7 +246,7 @@ class ProcessPreparation:
         del position
 
         voxel_id = identifier_offset
-        coordinate = np.zeros([c, 3], np.uint32)
+        coordinate = np.zeros([c, 3], np.uint64)
         for k in np.arange(0, self.extent[2]):
             for j in np.arange(0, self.extent[1]):
                 for i in np.arange(0, self.extent[0]):
@@ -332,6 +329,7 @@ class ProcessPreparation:
             f"{trg}/weight", compression="gzip", compression_opts=1, data=total_cnts
         )
         h5w.close()
+        write_xdmf(self.config["results_file_path"], self.extent, self.origin)
 
     def run(self, recon_file_path: str, range_file_path: str):
         xyz_val, xyz_unit = get_reconstructed_positions(recon_file_path)

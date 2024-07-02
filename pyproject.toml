@@ -28,6 +28,7 @@ dependencies = [
     "ifes_apt_tc_data_modeling>=0.2.1",  
     "pyyaml",
     "flatdict",
+    "lxml",
     "jupyter",
     "jupyterlab",
     "jupyterlab_h5web",

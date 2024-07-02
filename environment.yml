@@ -8,6 +8,7 @@ dependencies:
   - scikit-learn
   - pyyaml
   - flatdict
+  - lxml
   - ifes-apt-tc-data-modeling>=0.2.1
   # - matplotlib
   # - pytest

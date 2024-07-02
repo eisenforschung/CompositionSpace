@@ -1,0 +1,3 @@
+from visualization import generate_xdmf_for_visualizing_content
+
+generate_xdmf_for_visualizing_content("CompositionSpace.Results.1.nxs")
