@@ -20,11 +20,11 @@ def decorate_path_to_default_plot(h5w, nxpath: str):
         symbol_e = path[idx + 1].find("]")
         if 0 <= symbol_s < symbol_e:
             grp = h5w[f"{trg}"]
-            grp.attrs["@default"] = f"{path[idx + 1][symbol_s + 1:symbol_e]}"
+            grp.attrs["default"] = f"{path[idx + 1][symbol_s + 1:symbol_e]}"
             trg += f"{path[idx + 1][symbol_s + 1:symbol_e]}/"
         else:
             grp = h5w[f"{trg}"]
-            grp.attrs["@default"] = f"{path[idx + 1]}"
+            grp.attrs["default"] = f"{path[idx + 1]}"
             trg += f"{path[idx + 1]}/"
     return
 

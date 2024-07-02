@@ -1,10 +1,12 @@
 import os
-import yaml
+
+import flatdict as fd
 import h5py
 import numpy as np
-import flatdict as fd
-from sklearn.mixture import GaussianMixture
+import yaml
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.mixture import GaussianMixture
+
 from compositionspace.get_gitrepo_commit import get_repo_last_commit
 from compositionspace.utils import APT_UINT, PRNG_SEED, get_composition_matrix
 
@@ -85,7 +87,7 @@ class ProcessAutomatedPhaseAssignment:
         grp = h5w.create_group(trg)
         grp.attrs["NX_class"] = "NXdata"
         grp.attrs["axes"] = "axis_feature_identifier"
-        grp.attrs["axis_feature_identifier"] = np.uint64(0)
+        grp.attrs["axis_feature_identifier_indices"] = np.uint64(0)
         grp.attrs["signal"] = "axis_feature_importance"
         # further attributes, to render it a proper NeXus NXdata object
         dst = h5w.create_dataset(

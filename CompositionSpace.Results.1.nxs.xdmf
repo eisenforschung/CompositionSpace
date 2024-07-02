@@ -1,71 +1,45 @@
-<?xml version="1.0" ?>
+<?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
 <Xdmf Version="2.0">
   <Domain>
-    <Grid Name="Structured Grid" GridType="Uniform">
+    <Grid Name="entry1/voxelization/cg_grid" GridType="Uniform">
       <Topology TopologyType="3DCoRectMesh" NumberOfElements="80 44 45"/>
       <Geometry GeometryType="ORIGIN_DXDYDZ">
-        <DataItem Name="Origin" Dimensions="3" NumberType="Float" Precision="8" Format="XML">
-          -78.0 -20.0 −23.0
-        </DataItem>
-        <DataItem Name="Spacing" Dimensions="3" NumberType="Float" Precision="8" Format="XML">
-          1.0 1.0 1.0
-        </DataItem>
+        <DataItem Format="HDF" Dimensions="3" NumberType="Float" Precision="8" Name="Origin">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/voxelization/cg_grid/origin</DataItem>
+        <DataItem Format="HDF" Dimensions="3" NumberType="Float" Precision="8" Name="Spacing">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/voxelization/cg_grid/cell_dimensions</DataItem>
       </Geometry>
-      <Attribute Name="counts" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="UInt" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/voxelization/counts
-        </DataItem>
+      <Attribute Name="total, weight" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/voxelization/weight</DataItem>
       </Attribute>
-      <Attribute Name="element1" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="UInt" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/voxelization/element1/counts
-        </DataItem>
+      <Attribute Name="C, 1, weight" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/voxelization/element1/weight</DataItem>
       </Attribute>
-      <Attribute Name="element2" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="UInt" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/voxelization/element2/counts
-        </DataItem>
+      <Attribute Name="Cr, 2, weight" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/voxelization/element2/weight</DataItem>
       </Attribute>
-      <Attribute Name="element3" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="UInt" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/voxelization/element3/counts
-        </DataItem>
+      <Attribute Name="Cu, 3, weight" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/voxelization/element3/weight</DataItem>
       </Attribute>
-      <Attribute Name="element4" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="UInt" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/voxelization/element4/counts
-        </DataItem>
+      <Attribute Name="O, 4, weight" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/voxelization/element4/weight</DataItem>
       </Attribute>
-      <Attribute Name="element5" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="UInt" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/voxelization/element5/counts
-        </DataItem>
+      <Attribute Name="Si, 5, weight" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/voxelization/element5/weight</DataItem>
       </Attribute>
-      <Attribute Name="icopt0" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="Int" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis0/y_pred
-        </DataItem>
+      <Attribute Name="ic_opt, 0, y_pred" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis0/y_pred</DataItem>
       </Attribute>
-      <Attribute Name="icopt1" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="Int" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis1/y_pred
-        </DataItem>
+      <Attribute Name="ic_opt, 1, y_pred" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis1/y_pred</DataItem>
       </Attribute>
-      <Attribute Name="icopt2" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="Int" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis2/y_pred
-        </DataItem>
+      <Attribute Name="ic_opt, 2, y_pred" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis2/y_pred</DataItem>
       </Attribute>
-      <Attribute Name="icopt3" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="Int" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis3/y_pred
-        </DataItem>
+      <Attribute Name="ic_opt, 3, y_pred" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis3/y_pred</DataItem>
       </Attribute>
-      <Attribute Name="icopt4" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="45 44 80" NumberType="Int" Precision="8" Format="HDF">
-          CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis4/y_pred
-        </DataItem>
+      <Attribute Name="ic_opt, 4, y_pred" AttributeType="Scalar" Center="Node">
+        <DataItem Format="HDF" Dimensions="45 44 80" NumberType="UInt" Precision="8">/home/kaiobach/Research/hu_hu_hu/sprint22/conda-compspace-step01/CompositionSpace/CompositionSpace.Results.1.nxs:/entry1/segmentation/ic_opt/cluster_analysis4/y_pred</DataItem>
       </Attribute>
     </Grid>
   </Domain>

@@ -65,7 +65,7 @@ class ProcessSegmentation:
         grp = h5w.create_group(trg)
         grp.attrs["NX_class"] = "NXdata"
         grp.attrs["axes"] = "axis_pca_dimension"
-        grp.attrs["axis_pca_dimension"] = np.uint64(0)
+        grp.attrs["axis_pca_dimension_indices"] = np.uint64(0)
         grp.attrs["signal"] = "axis_explained_variance"
         # further attributes, to render it a proper NeXus NXdata object
         axis_dim = np.asarray(
@@ -181,7 +181,7 @@ class ProcessSegmentation:
         grp = h5w.create_group(trg)
         grp.attrs["NX_class"] = "NXdata"
         grp.attrs["axes"] = "axis_dimension"
-        grp.attrs["axis_dimension"] = np.uint64(0)
+        grp.attrs["axis_dimension_indices"] = np.uint64(0)
         # grp.attrs["signal"] = "axis_aic"  # Akaike information criterion
         grp.attrs["signal"] = "axis_bic"  # Bayes information criterion
         grp.attrs["auxiliary_signals"] = ["axis_aic"]
