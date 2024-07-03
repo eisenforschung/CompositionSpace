@@ -12,3 +12,8 @@ traj.*
 *.sub*
 *.dat
 *log*
+*.h5
+*.vtu
+*.png
+./output/
+./tests/data/

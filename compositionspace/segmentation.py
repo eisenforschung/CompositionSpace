@@ -13,6 +13,8 @@ from pyevtk.hl import pointsToVTK
 from pyevtk.hl import gridToVTK#, pointsToVTKAsTIN
 import yaml
 import pyvista as pv
+from sklearn.mixture import GaussianMixture
+from sklearn.ensemble import RandomForestClassifier
 
 class CompositionClustering():
     
@@ -273,4 +275,95 @@ class CompositionClustering():
             grid.plot(**kwargs, jupyter_backend="panel")
 
 
+    def plot_relative_importance(self, feature_importances, feature_names, sorted_idx):
+        # Plotting the feature importances
+        # Create the vertical bar graph
+        plt.figure(figsize=(10, 12))
+        plt.title("Feature Importances")
+        plt.bar(range(len(sorted_idx)), feature_importances[sorted_idx], align="center")
+        plt.xticks(range(len(sorted_idx)), [feature_names[i] for i in sorted_idx], rotation=45)
+        plt.ylabel("Relative Importance")
+        plt.xlabel("Features")
+        plt.show()
+   
+    def auto_phase_assign(self, Slices_file, Vox_ratios_file, 
+                              initial_guess_phases, plot=False, 
+                              print_importance=False,
+                                modified_comp_analysis=None, 
+                                n_trunc_spec=None):
 
+
+        with h5py.File(Slices_file , "r") as hdfr:
+            group1 = hdfr.get("group_xyz_Da_spec")
+            Chem_list =list(list(group1.attrs.values())[1])
+            #hdfr['Group_xyz_Da_spec'].attrs.keys()
+
+
+        with h5py.File(Vox_ratios_file , "r") as hdfr:
+            Ratios = np.array(hdfr.get("vox_ratios"))
+            group = hdfr.get("vox_ratios")
+            Ratios_colomns = list(list(hdfr.attrs.values())[0])
+
+
+        Ratios = pd.DataFrame(data=Ratios, columns=Ratios_colomns) 
+
+        X = Ratios.drop(['Total_no','vox'], axis=1)
+
+        gm = GaussianMixture(n_components=initial_guess_phases, max_iter=100000,verbose=0)
+        gm.fit(X)
+        y_pred=gm.predict(X)
+        Ratios = pd.DataFrame(data=X.values, columns=Chem_list) 
+
+
+        # Replace this with your actual dataset loading code
+        X_ = X.values
+        y = y_pred
+        # Initialize the Random Forest Classifier
+        rf = RandomForestClassifier(n_estimators=100, random_state=42)
+
+        # Fit the model to the data
+        rf.fit(X_, y)
+
+        # Get the feature importances
+        feature_importances = rf.feature_importances_
+
+        # Sort the features by their importances
+        #sorted_idx = np.argsort(feature_importances)
+        sorted_idx = feature_importances.argsort()[::-1]
+        
+
+
+        # Print sorted feature importances along with their corresponding feature numbers
+        feature_names = Chem_list
+
+
+        if plot==True:
+            self.plot_relative_importance(feature_importances, feature_names, sorted_idx)
+        
+        if print_importance == True:
+                for index in sorted_idx:
+                    print(f" {feature_names[index]} - Importance: {feature_importances[index]}")
+            
+        # BIC analysis on modified compositions 
+        if modified_comp_analysis == True:
+            
+            #n_trunc_spec = 2
+            X_modified = X.values[:, sorted_idx][:,0:n_trunc_spec]
+            gm_scores=[]
+            aics=[]
+            bics=[]
+
+            n_clusters=list(range(1,11))
+            for n_cluster in tqdm(n_clusters):
+                gm = GaussianMixture(n_components=n_cluster,verbose=0)
+                gm.fit(X_modified)
+                y_pred=gm.predict(X_modified)
+                #gm_scores.append(homogeneity_score(y,y_pred))
+                aics.append(gm.aic(X_modified))
+                bics.append(gm.bic(X_modified))
+
+            plt.plot(n_clusters, bics, "-o",label="BIC")
+
+        return sorted_idx
+
+        
