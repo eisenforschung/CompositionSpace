@@ -6,11 +6,14 @@ dependencies:
   - numpy
   - h5py
   - scikit-learn
+  - trimesh
+  - ifes-apt-tc-data-modeling>=0.2.1
   - pyyaml
   - flatdict
   - lxml
-  - ifes-apt-tc-data-modeling>=0.2.1
-  - trimesh
+  - jupyter
+  - jupyterlab
+  - jupyterlab_h5web
   # - matplotlib
   # - pytest
   # - pandas

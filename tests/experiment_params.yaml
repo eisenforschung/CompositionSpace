@@ -14,3 +14,7 @@ clustering:
   dbscan:
     eps: 3
     min_samples: 5
+meshing:
+  # what are the following ones?
+  distance_cut: 14
+  normal_end_length: 15
