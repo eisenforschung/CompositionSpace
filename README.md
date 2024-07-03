@@ -1,5 +1,4 @@
 # CompositionSpace
-
 CompositionSpace is a python library for analysis of APT data.
 
 ## Installation
@@ -10,7 +9,7 @@ git clone https://github.com/eisenforschung/CompositionSpace
 cd CompositionSpace
 git checkout nexus-io
 git submodule sync --recursive
-git submodule update --init --recursive --jobs=4
+git submodule update --init --recursive --remote
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
@@ -25,8 +24,7 @@ pip install compositionspace
 
 <!--
 ### Installation for users via [Conda](https://anaconda.org/)
-
-It is **strongly** recommended to install and use `compositionspace` within a conda environment. To see how you can install conda see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
+It is recommended to install and use `compositionspace` within a conda environment. To see how you can install conda see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/).
 
 Once a conda distribution is available, the following steps will help set up an environment to use `compositionspace`. First step is to clone the repository.
 
@@ -54,9 +52,9 @@ python setup.py install
 ```
 
 The environment is now set up to run compositionspace.
+-->
 
 ## Examples
-
 For an example of the complete workflow using `FullWorkflow.ipynb`.
 
 [The usa_denton_smith dataset is available here](https://zenodo.org/records/7986279/files/usa_denton_smith_apav_si.zip?download=1)
