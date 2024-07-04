@@ -13,7 +13,7 @@ dependencies:
   - lxml
   - jupyter
   - jupyterlab
-  - jupyterlab_h5web
+  - jupyterlab-h5web
   # - matplotlib
   # - pytest
   # - pandas
