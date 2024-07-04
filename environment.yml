@@ -1,5 +1,5 @@
 # v0.1 release candidate
-name: compositionspace_iuc09
+name: compspace
 channels:
   - conda-forge
 dependencies:
