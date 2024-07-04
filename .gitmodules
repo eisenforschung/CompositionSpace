@@ -1,0 +1,4 @@
+[submodule "nexus_definitions"]
+	path = nexus_definitions
+	url = https://github.com/FAIRmat-NFDI/nexus_definitions
+	branch = fairmat

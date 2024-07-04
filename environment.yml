@@ -1,20 +1,27 @@
-name: iuc09
+# v0.1 release candidate
+name: compositionspace_iuc09
 channels:
   - conda-forge
 dependencies:
   - numpy
-  - matplotlib
-  - pytest
-  - pandas
-  - numba
   - h5py
   - scikit-learn
-  - tqdm
-  - pyevtk
-  - ipywidgets
-  - pyyaml
-  - ipyvtklink
-  - pyvista
-  - ipywidgets
-  - panel
   - trimesh
+  - ifes-apt-tc-data-modeling>=0.2.1
+  - pyyaml
+  - flatdict
+  - lxml
+  - jupyter
+  - jupyterlab
+  - jupyterlab_h5web
+  # - matplotlib
+  # - pytest
+  # - pandas
+  # - numba
+  # - tqdm
+  # - pyevtk
+  # - ipywidgets
+  # - ipyvtklink
+  # - pyvista
+  # - ipywidgets
+  # - panel

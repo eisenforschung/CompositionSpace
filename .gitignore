@@ -13,7 +13,5 @@ traj.*
 *.dat
 *log*
 *.h5
+*.nxs
 *.vtu
-*.png
-./output/
-./tests/data/
