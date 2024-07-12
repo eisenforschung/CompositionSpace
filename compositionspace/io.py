@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 from ase.data import chemical_symbols
 from ifes_apt_tc_data_modeling.apt.apt6_reader import ReadAptFileFormat
+from ifes_apt_tc_data_modeling.pos.pos_reader import ReadPosFileFormat
 from ifes_apt_tc_data_modeling.rrng.rrng_reader import ReadRrngFileFormat
 from ifes_apt_tc_data_modeling.utils.definitions import MQ_EPSILON
 
@@ -25,6 +26,13 @@ def get_reconstructed_positions(file_path: str = ""):
             f"Load reconstructed positions shape {np.shape(xyz.values)}, type {type(xyz.values)}, dtype {xyz.values.dtype}"
         )
         return (xyz.values, "nm")
+    elif file_path.lower().endswith(".pos"):
+        pos = ReadPosFileFormat(file_path)
+        xyz = pos.get_reconstructed_positions()
+        print(
+            f"Load reconstructed positions shape {np.shape(xyz.values)}, type {type(xyz.values)}, dtype {xyz.values.dtype}"
+        )
+        return (xyz.values, "nm")
     else:
         with h5py.File(file_path, "r") as h5r:
             trg = "/entry1/atom_probe/reconstruction/reconstructed_positions"
@@ -42,7 +50,6 @@ def get_ranging_info(file_path: str = "", verbose: bool = False):
     if file_path.lower().endswith(".rrng"):
         rrng = ReadRrngFileFormat(file_path, unique=True, verbose=False)
         n_ion_types = 1 + len(rrng.rrng["molecular_ions"])  # 1 + for the unknown type!
-        print(f">>>> rrng >>>> {n_ion_types}")
         # add the unknown iontype
         iontypes["ion0"] = ("unknown", np.uint8(0), np.float64([0.0, MQ_EPSILON]))
         print(f"{iontypes["ion0"]}")
@@ -97,6 +104,7 @@ def get_ranging_info(file_path: str = "", verbose: bool = False):
 def get_iontypes(file_path: str = "", iontypes: dict = {}):
     """Get (n,) array of ranged iontype."""
     ityp = None
+    mq = None
     if file_path.lower().endswith(".apt"):
         if not isinstance(iontypes, dict) or len(iontypes) == 0:
             raise KeyError(
@@ -105,7 +113,15 @@ def get_iontypes(file_path: str = "", iontypes: dict = {}):
         apt = ReadAptFileFormat(file_path)
         # print(apt.get_metadata_table())
         mq = apt.get_mass_to_charge_state_ratio()
-
+    elif file_path.lower().endswith(".pos"):
+        if not isinstance(iontypes, dict) or len(iontypes) == 0:
+            raise KeyError(
+                f"Passing ranging definitions is required when working with POS files!"
+            )
+        pos = ReadPosFileFormat(file_path)
+        # print(apt.get_metadata_table())
+        mq = pos.get_mass_to_charge_state_ratio()
+    if mq is not None:
         # range on-the-fly using information
         n_ions = np.shape(mq.values)[0]
         ityp = np.zeros((n_ions,), np.uint8)

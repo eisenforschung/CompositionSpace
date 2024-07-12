@@ -335,7 +335,7 @@ class ProcessPreparation:
     def run(self, recon_file_path: str, range_file_path: str):
         xyz_val, xyz_unit = get_reconstructed_positions(recon_file_path)
         if recon_file_path.lower().endswith(
-            ".apt"
+            (".apt", ".pos")
         ) and range_file_path.lower().endswith(".rrng"):
             ityp_info, nochrg_ityp_info, elements = get_ranging_info(
                 range_file_path, verbose=True
@@ -350,7 +350,7 @@ class ProcessPreparation:
             ityp_val = get_iontypes(range_file_path)
         else:
             raise IOError(
-                f"(APT, RRNG) or (NXS, NXS) are the only supported combinations!"
+                f"((APT or POS) and RRNG) or (NXS and NXS) are the only supported combinations!"
             )
 
         self.init_ranging(ityp_info, elements)
