@@ -1,5 +1,3 @@
-# input_path: tests/data
-# output_path: tests/output
 voxelization:
   edge_length: 1
 autophase:
