@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "compositionspace"
-version = '0.0.10'
+version = '0.1.0'
 authors = [
     { name = "Alaukik Saxena, Sarath Menon, Mariano Forti, Markus Kühbach" },
 ]
