@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "compositionspace"
-dynamic = ["version"]
+version = '0.0.9'
 authors = [
     { name = "Alaukik Saxena, Sarath Menon, Mariano Forti, Markus Kühbach" },
 ]
@@ -26,7 +26,7 @@ dependencies = [
     "h5py",
     "scikit-learn",
     "trimesh",
-    "ifes_apt_tc_data_modeling>=0.2.1",  
+    "ifes_apt_tc_data_modeling>=0.2.1",
     "pyyaml",
     "flatdict",
     "lxml",
