@@ -53,13 +53,17 @@ dev = [
     "pip-tools",
 ]
 
+[tool.setuptools]
+packages = ["compositionspace"]
+#package-dir = {"" = "compositionspace"}
+
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"
 local_scheme = "node-and-date"
 
-[tool.setuptools.packages.find]
-include = ["compositionspace/*"]
-exclude = ["development/*", "nexus_definitions/*"]
+#[tool.setuptools.packages.find]
+#include = ["compositionspace/*"]
+#exclude = ["development/*", "nexus_definitions/*"]
 
 [tool.ruff]
 include = ["compositionspace/*.py", "tests/*.py"]
