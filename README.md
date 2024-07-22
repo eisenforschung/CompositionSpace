@@ -7,7 +7,6 @@ CompositionSpace is a python library for analysis of APT data.
 ```
 git clone https://github.com/eisenforschung/CompositionSpace
 cd CompositionSpace
-git checkout nexus-io
 git submodule sync --recursive
 git submodule update --init --recursive --remote
 python -m pip install --upgrade pip
@@ -54,11 +53,11 @@ python setup.py install
 The environment is now set up to run compositionspace.
 -->
 
-## Examples
-For an example of the complete workflow using `FullWorkflow.ipynb`.
+## Getting started
+Navigate to tests. Spin up a jupyter notebook and run `FullWorkflow.ipynb`.
 
 [The usa_denton_smith dataset is available here](https://zenodo.org/records/7986279/files/usa_denton_smith_apav_si.zip?download=1)
-[Various further atom probe datasets for testing are available here](https://dx.doi.org/10.25833/3ge0-y420)
+[Further atom probe datasets for testing are available here](https://dx.doi.org/10.25833/3ge0-y420)
 
 <!--
 ## Documentation
