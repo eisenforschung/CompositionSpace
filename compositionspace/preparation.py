@@ -39,6 +39,8 @@ class ProcessPreparation:
         if os.path.exists(config_file_path):
             with open(config_file_path, "r") as yml:
                 self.config = fd.FlatDict(yaml.safe_load(yml), delimiter="/")
+        elif isinstance(config_file_path, dict):
+            self.config = fd.FlatDict(config_file_path, delimiter="/")
         else:
             raise IOError(f"File {config_file_path} does not exist!")
         self.config["config_file_path"] = config_file_path
