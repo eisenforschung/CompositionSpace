@@ -47,7 +47,7 @@ class ProcessPreparation:
         self.config["results_file_path"] = results_file_path
         self.config["entry_id"] = entry_id
         self.verbose = verbose
-        self.version = get_repo_last_commit()
+        self.version = __version__
         self.voxel_identifier = None
         self.n_ions = 0
         self.itypes: dict = {}
