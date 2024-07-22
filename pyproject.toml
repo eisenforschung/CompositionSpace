@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "compositionspace"
-dynamic = ["version"]
+version = '0.0.10'
 authors = [
     { name = "Alaukik Saxena, Sarath Menon, Mariano Forti, Markus Kühbach" },
 ]
@@ -26,7 +26,7 @@ dependencies = [
     "h5py",
     "scikit-learn",
     "trimesh",
-    "ifes_apt_tc_data_modeling>=0.2.1",  
+    "ifes_apt_tc_data_modeling>=0.2.1",
     "pyyaml",
     "flatdict",
     "lxml",
@@ -53,13 +53,17 @@ dev = [
     "pip-tools",
 ]
 
+[tool.setuptools]
+packages = ["compositionspace"]
+#package-dir = {"" = "compositionspace"}
+
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"
 local_scheme = "node-and-date"
 
-[tool.setuptools.packages.find]
-include = ["compositionspace/*"]
-exclude = ["development/*", "nexus_definitions/*"]
+#[tool.setuptools.packages.find]
+#include = ["compositionspace/*"]
+#exclude = ["development/*", "nexus_definitions/*"]
 
 [tool.ruff]
 include = ["compositionspace/*.py", "tests/*.py"]

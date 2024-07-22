@@ -8,8 +8,8 @@ import h5py
 import numpy as np
 import yaml
 
-from compositionspace.get_gitrepo_commit import get_repo_last_commit
-from compositionspace.get_nexus_version import get_nexus_version, get_nexus_version_hash
+
+from compositionspace import __nexus__version__, __nexus__version__hash__, __version__
 from compositionspace.io import (
     get_iontypes,
     get_ranging_info,
@@ -39,13 +39,15 @@ class ProcessPreparation:
         if os.path.exists(config_file_path):
             with open(config_file_path, "r") as yml:
                 self.config = fd.FlatDict(yaml.safe_load(yml), delimiter="/")
+        elif isinstance(config_file_path, dict):
+            self.config = fd.FlatDict(config_file_path, delimiter="/")
         else:
             raise IOError(f"File {config_file_path} does not exist!")
         self.config["config_file_path"] = config_file_path
         self.config["results_file_path"] = results_file_path
         self.config["entry_id"] = entry_id
         self.verbose = verbose
-        self.version = get_repo_last_commit()
+        self.version = __version__
         self.voxel_identifier = None
         self.n_ions = 0
         self.itypes: dict = {}
@@ -66,9 +68,9 @@ class ProcessPreparation:
         ).isoformat()  # .replace("+00:00", "Z")
         # /@file_update_time
         h5w.attrs["NeXus_repository"] = (
-            f"https://github.com/FAIRmat-NFDI/nexus_definitions/blob/{get_nexus_version_hash()}"
+            f"https://github.com/FAIRmat-NFDI/nexus_definitions/blob/{__nexus__version__hash__}"
         )
-        h5w.attrs["NeXus_version"] = get_nexus_version()
+        h5w.attrs["NeXus_version"] = __nexus__version__
         h5w.attrs["HDF5_version"] = ".".join(map(str, h5py.h5.get_libversion()))
         h5w.attrs["h5py_version"] = h5py.__version__
 
@@ -82,9 +84,9 @@ class ProcessPreparation:
         grp = h5w.create_group(trg)
         grp.attrs["NX_class"] = "NXprogram"
         dst = h5w.create_dataset(f"{trg}/program", data="compositionspace")
-        dst.attrs["version"] = get_repo_last_commit()
+        dst.attrs["version"] = __version__
         dst.attrs["url"] = (
-            f"https://github.com/eisenforschung/CompositionSpace/blob/{get_repo_last_commit()}"
+            f"https://github.com/eisenforschung/CompositionSpace/releases/tag/{__version__}"
         )
         h5w.close()
 
