@@ -135,7 +135,7 @@ class ProcessSegmentation:
                             C_mod[:, j] = self.composition_matrix[:, idx]
                     else:
                         raise KeyError(
-                            f"{trg} does not exist in {self.config["results_file_path"]} !"
+                            f"{trg} does not exist in {self.config['results_file_path']} !"
                         )
             else:
                 print("Using results without automated phase assignment")
