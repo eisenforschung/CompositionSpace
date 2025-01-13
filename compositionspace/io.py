@@ -22,24 +22,24 @@ def get_reconstructed_positions(file_path: str = ""):
         apt = ReadAptFileFormat(file_path)
         # print(apt.get_metadata_table())
         xyz = apt.get_reconstructed_positions()
-        print(
-            f"Load reconstructed positions shape {np.shape(xyz.values)}, type {type(xyz.values)}, dtype {xyz.values.dtype}"
-        )
+        #print(
+        #    f"Load reconstructed positions shape {np.shape(xyz.values)}, type {type(xyz.values)}, dtype {xyz.values.dtype}"
+        #)
         return (xyz.values, "nm")
     elif file_path.lower().endswith(".pos"):
         pos = ReadPosFileFormat(file_path)
         xyz = pos.get_reconstructed_positions()
-        print(
-            f"Load reconstructed positions shape {np.shape(xyz.values)}, type {type(xyz.values)}, dtype {xyz.values.dtype}"
-        )
+        #print(
+        #    f"Load reconstructed positions shape {np.shape(xyz.values)}, type {type(xyz.values)}, dtype {xyz.values.dtype}"
+        #)
         return (xyz.values, "nm")
     else:
         with h5py.File(file_path, "r") as h5r:
             trg = "/entry1/atom_probe/reconstruction/reconstructed_positions"
             xyz = h5r[trg][:, :]
-            print(
-                f"Load reconstructed positions shape {np.shape(xyz)}, type {type(xyz)}, dtype {xyz.dtype}"
-            )
+            #print(
+            #    f"Load reconstructed positions shape {np.shape(xyz)}, type {type(xyz)}, dtype {xyz.dtype}"
+            #)
             return (xyz, "nm")
 
 
@@ -52,14 +52,14 @@ def get_ranging_info(file_path: str = "", verbose: bool = False):
         n_ion_types = 1 + len(rrng.rrng["molecular_ions"])  # 1 + for the unknown type!
         # add the unknown iontype
         iontypes["ion0"] = ("unknown", np.uint8(0), np.float64([0.0, MQ_EPSILON]))
-        print(f"{iontypes["ion0"]}")
+        #print(f'{iontypes["ion0"]}')
         for ion_id, mion in enumerate(rrng.rrng["molecular_ions"]):
             iontypes[f"ion{ion_id + 1}"] = (
                 mion.name.values,
                 np.uint8(ion_id + 1),
                 mion.ranges.values.flatten(),
             )
-            print(f"{iontypes[f'ion{ion_id + 1}']}")
+            #print(f"{iontypes[f'ion{ion_id + 1}']}")
     else:
         with h5py.File(file_path, "r") as h5r:
             trg = "/entry1/atom_probe/ranging/peak_identification"
@@ -71,12 +71,12 @@ def get_ranging_info(file_path: str = "", verbose: bool = False):
                     np.uint8(ion_id),
                     h5r[f"{trg}/ion{ion_id}/mass_to_charge_range"][:, :],
                 )
-                print(f"{iontypes[f'ion{ion_id}']}")
+                #print(f"{iontypes[f'ion{ion_id}']}")
 
-    print(f"{n_ion_types} iontypes distinguished:")
-    if verbose:
-        for key, val in iontypes.items():
-            print(f"\t{key}, {val}")
+    #print(f"{n_ion_types} iontypes distinguished:")
+    #if verbose:
+    #    for key, val in iontypes.items():
+    #        print(f"\t{key}, {val}")
     chrg_agnostic_iontypes: dict = {}
     elements = set()
     for key, value in iontypes.items():
@@ -89,15 +89,15 @@ def get_ranging_info(file_path: str = "", verbose: bool = False):
         for symbol in symbols:
             if symbol in chemical_symbols[1::]:
                 elements.add(symbol)
-    print(f"{len(chrg_agnostic_iontypes)} charge-agnostic iontypes distinguished:")
-    if verbose:
-        for key, val in chrg_agnostic_iontypes.items():
-            print(f"\t{key}, {val}")
-    print(f"{len(elements)} elements distinguished:")
+    #print(f"{len(chrg_agnostic_iontypes)} charge-agnostic iontypes distinguished:")
+    #if verbose:
+    #    for key, val in chrg_agnostic_iontypes.items():
+    #        print(f"\t{key}, {val}")
+    #print(f"{len(elements)} elements distinguished:")
     lex_asc_elements = np.sort(list(elements), kind="stable")
-    if verbose:
-        for symbol in lex_asc_elements:
-            print(symbol)
+    #if verbose:
+    #    for symbol in lex_asc_elements:
+    #        print(symbol)
     return iontypes, chrg_agnostic_iontypes, lex_asc_elements
 
 
@@ -130,17 +130,15 @@ def get_iontypes(file_path: str = "", iontypes: dict = {}):
                 ion_id = value[1]
                 low = value[2][0]
                 high = value[2][1]
-                print(f"Ranging {ion_id} with [{low}, {high}] ...")
+                #print(f"Ranging {ion_id} with [{low}, {high}] ...")
                 msk = np.argwhere((mq.values >= low) & (mq.values <= high))
-                print(f"{np.shape(msk)}, {msk[0:5]}, {msk[-5:]}")
+                #print(f"{np.shape(msk)}, {msk[0:5]}, {msk[-5:]}")
                 ityp[msk] = ion_id
-            else:
-                print(f"Skipping ion0...")
     else:
         with h5py.File(file_path, "r") as h5r:
             trg = "/entry1/iontypes/iontypes"
             ityp = h5r[trg][:]
-            print(
-                f"Load ranged iontypes shape {np.shape(ityp)}, type {type(ityp)}, dtype {ityp.dtype}"
-            )
+            #print(
+            #    f"Load ranged iontypes shape {np.shape(ityp)}, type {type(ityp)}, dtype {ityp.dtype}"
+            #)
     return ityp
