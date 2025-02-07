@@ -1,3 +1,5 @@
+specimen:
+  type: experiment
 voxelization:
   edge_length: 1
 autophase:

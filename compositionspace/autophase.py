@@ -73,9 +73,10 @@ class ProcessAutomatedPhaseAssignment:
         if self.verbose:
             print(f"sorted_indices {sorted_indices} in decreasing feature importance")
             print(f"sorted_index, feature_importance[sorted_index]")
-            for idx in sorted_indices:
-                descending_importances.append(feature_importances[idx])
-                print(f"{idx}, {feature_importances[idx]}")
+        for idx in sorted_indices:
+            descending_importances.append(feature_importances[idx])
+            if self.verbose:
+                print(f"{idx}, {feature_importances[idx]}, {descending_importances[-1]}")
         del feature_importances
 
         h5w = h5py.File(self.config["results_file_path"], "a")

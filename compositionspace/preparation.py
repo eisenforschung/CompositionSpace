@@ -17,6 +17,7 @@ from compositionspace.io import (
 )
 from compositionspace.utils import (
     APT_UINT,
+    get_sha256,
     ceil_to_multiple,
     floor_to_multiple,
     get_chemical_element_multiplicities,
@@ -88,6 +89,14 @@ class ProcessPreparation:
         dst.attrs["url"] = (
             f"https://github.com/eisenforschung/CompositionSpace/releases/tag/{__version__}"
         )
+        trg = f"/entry{self.config['entry_id']}/config"
+        grp = h5w.create_group(trg)
+        grp.attrs["NX_class"] = "NXserialized"
+        dst = h5w.create_dataset(f"{trg}/type", data="file")
+        dst = h5w.create_dataset(f"{trg}/path", data=self.config["config_file_path"])
+        dst = h5w.create_dataset(f"{trg}/checksum", data=get_sha256(self.config["config_file_path"]))
+        dst = h5w.create_dataset(f"{trg}/algorithm", data="sha256")
+
         h5w.close()
 
     def define_voxelization_grid(self, xyz):
@@ -308,12 +317,14 @@ class ProcessPreparation:
                     # alternatively, one could make two loops where in the first an offset lookup table is generated
                     # after this point one can drop the iontype and evap_id columns from the lu_ityp_voxel_id_evap_id lookup table
 
+        atom_types = set()
         for symbol in elem_cnts:
             # atom/molecular ion-type-specific contribution/intensity/count in each voxel/cell
             trg = f"/entry{self.config['entry_id']}/voxelization/element{elem_id[symbol] + 1}"
             print(f"{trg}, {symbol}")
             grp = h5w.create_group(f"{trg}")
             grp.attrs["NX_class"] = "NXion"
+            atom_types.add(str(symbol))
             dst = h5w.create_dataset(f"{trg}/name", data=str(symbol))
             dst = h5w.create_dataset(
                 f"{trg}/weight",
@@ -332,6 +343,16 @@ class ProcessPreparation:
         dst = h5w.create_dataset(
             f"{trg}/weight", compression="gzip", compression_opts=1, data=total_cnts
         )
+
+        # specimen group
+        trg = f"/entry{self.config['entry_id']}/specimen"
+        grp = h5w.create_group(f"{trg}")
+        grp.attrs["NX_class"] = "NXsample"
+        if str(self.config["specimen/type"]) in ["experiment", "simulation"]:
+            dst = h5w.create_dataset(f"{trg}/type", data=str(self.config["specimen/type"]))
+        else:
+            dst = h5w.create_dataset(f"{trg}/type", data="unknown")
+        dst = h5w.create_dataset(f"{trg}/atom_types", data=str(", ".join(list(atom_types))))
         h5w.close()
 
     def run(self, recon_file_path: str, range_file_path: str):
