@@ -61,7 +61,7 @@ class ProcessClustering:
         dst = h5w.create_dataset(f"{trg}/sequence_index", data=np.uint64(sequence_idx))
         trg = f"/entry{self.config['entry_id']}/clustering/ic_opt"
         grp = h5w.create_group(trg)
-        grp.attrs["NX_class"] = "NXobject"
+        grp.attrs["NX_class"] = "NXprocess"
         h5w.close()
 
         # n_ic_runs = sum(1 for grpnm in ic_results_group_names if grpnm.startswith("cluster_analysis"))

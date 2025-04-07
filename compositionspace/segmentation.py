@@ -110,7 +110,7 @@ class ProcessSegmentation:
         aics = []
         bics = []
         n_clusters_queue = list(
-            range(1, self.config["segmentation/n_max_ic_cluster"] + 1)
+            range(1, self.config["segmentation/ic_opt/n_max_ic_cluster"] + 1)
         )
         for n_bics_cluster in n_clusters_queue:
             X_train = None
@@ -118,7 +118,7 @@ class ProcessSegmentation:
             if self.config["autophase/use"]:
                 print("Using results with automated phase assignment")
                 with h5py.File(self.config["results_file_path"], "r") as h5r:
-                    trg = f"/entry{self.config['entry_id']}/autophase/result/axis_feature_identifier"
+                    trg = f"/entry{self.config['entry_id']}/autophase/result/axis_feature_indices"
                     if trg in h5r:
                         descending_indices = h5r[trg][:]
                         # print(descending_indices)
@@ -193,8 +193,8 @@ class ProcessSegmentation:
         axis_dim = np.asarray(
             np.linspace(
                 1,
-                self.config["segmentation/n_max_ic_cluster"],
-                num=self.config["segmentation/n_max_ic_cluster"],
+                self.config["segmentation/ic_opt/n_max_ic_cluster"],
+                num=self.config["segmentation/ic_opt/n_max_ic_cluster"],
                 endpoint=True,
             ),
             APT_UINT,

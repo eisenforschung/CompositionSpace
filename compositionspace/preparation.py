@@ -91,9 +91,9 @@ class ProcessPreparation:
         )
         trg = f"/entry{self.config['entry_id']}/config"
         grp = h5w.create_group(trg)
-        grp.attrs["NX_class"] = "NXserialized"
+        grp.attrs["NX_class"] = "NXnote"
         dst = h5w.create_dataset(f"{trg}/type", data="file")
-        dst = h5w.create_dataset(f"{trg}/path", data=self.config["config_file_path"])
+        dst = h5w.create_dataset(f"{trg}/file_name", data=self.config["config_file_path"])
         dst = h5w.create_dataset(f"{trg}/checksum", data=get_sha256(self.config["config_file_path"]))
         dst = h5w.create_dataset(f"{trg}/algorithm", data="sha256")
 
@@ -237,12 +237,12 @@ class ProcessPreparation:
         )
         dst.attrs["units"] = "nm"
         dst = h5w.create_dataset(f"{trg}/extent", data=self.extent)
-        identifier_offset = 0  # we count cells starting from this value
+        index_offset = 0  # we count cells starting from this value
         dst = h5w.create_dataset(
-            f"{trg}/identifier_offset", data=np.uint64(identifier_offset)
+            f"{trg}/index_offset", data=np.uint64(index_offset)
         )
 
-        voxel_id = identifier_offset
+        voxel_id = index_offset
         position = np.zeros([c, 3], np.float64)
         for k in np.arange(0, self.extent[2]):
             z = self.aabb3d[2, 0] + (0.5 + k) * dedge
@@ -258,7 +258,7 @@ class ProcessPreparation:
         dst.attrs["units"] = "nm"
         del position
 
-        voxel_id = identifier_offset
+        voxel_id = index_offset
         coordinate = np.zeros([c, 3], np.uint64)
         for k in np.arange(0, self.extent[2]):
             for j in np.arange(0, self.extent[1]):
@@ -295,7 +295,7 @@ class ProcessPreparation:
         h5w = h5py.File(self.config["results_file_path"], "a")
         trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
         dst = h5w.create_dataset(
-            f"{trg}/voxel_identifier",
+            f"{trg}/indices_voxel",
             compression="gzip",
             compression_opts=1,
             data=self.voxel_identifier,
@@ -345,14 +345,15 @@ class ProcessPreparation:
         )
 
         # specimen group
-        trg = f"/entry{self.config['entry_id']}/specimen"
-        grp = h5w.create_group(f"{trg}")
-        grp.attrs["NX_class"] = "NXsample"
-        if str(self.config["specimen/type"]) in ["experiment", "simulation"]:
-            dst = h5w.create_dataset(f"{trg}/type", data=str(self.config["specimen/type"]))
-        else:
-            dst = h5w.create_dataset(f"{trg}/type", data="unknown")
-        dst = h5w.create_dataset(f"{trg}/atom_types", data=str(", ".join(list(atom_types))))
+        if "specimen/is_simulation" in self.config:
+            trg = f"/entry{self.config['entry_id']}/specimen"
+            grp = h5w.create_group(f"{trg}")
+            grp.attrs["NX_class"] = "NXsample"
+            if self.config["specimen/is_simulation"] is True:
+                dst = h5w.create_dataset(f"{trg}/is_simulation", data=True)
+            else:
+                dst = h5w.create_dataset(f"{trg}/is_simulation", data=False)
+            dst = h5w.create_dataset(f"{trg}/atom_types", data=str(", ".join(list(atom_types))))
         h5w.close()
 
     def run(self, recon_file_path: str, range_file_path: str):

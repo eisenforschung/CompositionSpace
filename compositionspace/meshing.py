@@ -51,7 +51,7 @@ def meshes_normals(config_file_path, input_file_path, output_file_path):
     # and other parameter from yaml config file like shown in other *.py files
     Node_list_plot = []
     no_elements = config["voxelization/edge_length"]
-    dist_cut = config["meshing/dist_cut"]
+    dist_cut = config["meshing/distance_cut"]
     normal_end_length = config["meshing/normal_end_length"]
     nodes_edit_lst = []
     simp_plot_edit_lst = []
