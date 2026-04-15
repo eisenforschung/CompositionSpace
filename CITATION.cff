@@ -1,0 +1,32 @@
+cff-version: "1.2.0"
+type: software
+title: "CompositionSpace"
+authors:
+- family-names: Saxena
+  given-names: Alaukik
+  orcid: "https://orcid.org/0000-0001-6714-0954"
+- family-names: Menon
+  given-names: Sarath
+  orcid: "https://orcid.org/0000-0002-6776-1213"
+- family-names: Kühbach
+  given-names: Markus
+  orcid: "https://orcid.org/0000-0002-7117-5196"
+message: >-
+  Please cite this ontology using the metadata from
+  "preferred-citation".
+repository-code: 'https://github.com/eisenforschung/CompositionSpace'
+license: BSD-3-Clause
+version: 0.1.15
+preferred-citation:
+  authors:
+  - family-names: Saxena
+    given-names: Alaukik
+  - family-names: Menon
+    given-names: Sarath
+  - family-names: Kühbach
+    given-names: Markus
+  title: "CompositionSpace"
+  type: generic
+  year: 2026
+  url: https://github.com/eisenforschung/CompositionSpace
+
