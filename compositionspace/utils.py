@@ -3,6 +3,7 @@
 import os
 import numpy as np
 import h5py
+import hashlib
 from ase.data import chemical_symbols
 
 
@@ -10,6 +11,19 @@ from ase.data import chemical_symbols
 EPSILON = 1.0e-6
 APT_UINT = np.uint64
 PRNG_SEED = 42
+
+
+def get_sha256(file_path: str) -> str:
+    """Compute SHA256 checksum of file."""
+    fh = hashlib.sha256()
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as fp:
+            while True:
+                chunk = fp.read(fh.block_size)
+                if not chunk:
+                    break
+                fh.update(chunk)
+    return f"{fh.hexdigest()}"
 
 
 def ceil_to_multiple(number, multiple):

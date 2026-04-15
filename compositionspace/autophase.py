@@ -73,9 +73,10 @@ class ProcessAutomatedPhaseAssignment:
         if self.verbose:
             print(f"sorted_indices {sorted_indices} in decreasing feature importance")
             print(f"sorted_index, feature_importance[sorted_index]")
-            for idx in sorted_indices:
-                descending_importances.append(feature_importances[idx])
-                print(f"{idx}, {feature_importances[idx]}")
+        for idx in sorted_indices:
+            descending_importances.append(feature_importances[idx])
+            if self.verbose:
+                print(f"{idx}, {feature_importances[idx]}, {descending_importances[-1]}")
         del feature_importances
 
         h5w = h5py.File(self.config["results_file_path"], "a")
@@ -86,12 +87,12 @@ class ProcessAutomatedPhaseAssignment:
         trg = f"/entry{self.config['entry_id']}/autophase/result"
         grp = h5w.create_group(trg)
         grp.attrs["NX_class"] = "NXdata"
-        grp.attrs["axes"] = "axis_feature_identifier"
-        grp.attrs["axis_feature_identifier_indices"] = np.uint64(0)
+        grp.attrs["axes"] = "axis_feature_indices"
+        grp.attrs["axis_feature_indices_indices"] = np.uint64(0)
         grp.attrs["signal"] = "axis_feature_importance"
         # further attributes, to render it a proper NeXus NXdata object
         dst = h5w.create_dataset(
-            f"{trg}/axis_feature_identifier",
+            f"{trg}/axis_feature_indices",
             compression="gzip",
             compression_opts=1,
             data=np.asarray(sorted_indices, APT_UINT),

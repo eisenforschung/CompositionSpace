@@ -1,3 +1,8 @@
+identifier_analysis:
+reconstruction:
+ranging:
+specimen:
+  is_simulation: false
 voxelization:
   edge_length: 1
 autophase:
@@ -6,8 +11,9 @@ autophase:
   trunc_species: 2
   random_forest_classifier:
 segmentation:
-  n_max_ic_cluster: 5
-  gaussian_mixture:
+  ic_opt:
+    n_max_ic_cluster: 5
+    gaussian_mixture:
 clustering:
   dbscan:
     eps: 3

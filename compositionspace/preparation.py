@@ -17,6 +17,7 @@ from compositionspace.io import (
 )
 from compositionspace.utils import (
     APT_UINT,
+    get_sha256,
     ceil_to_multiple,
     floor_to_multiple,
     get_chemical_element_multiplicities,
@@ -88,6 +89,14 @@ class ProcessPreparation:
         dst.attrs["url"] = (
             f"https://github.com/eisenforschung/CompositionSpace/releases/tag/{__version__}"
         )
+        trg = f"/entry{self.config['entry_id']}/config"
+        grp = h5w.create_group(trg)
+        grp.attrs["NX_class"] = "NXnote"
+        dst = h5w.create_dataset(f"{trg}/type", data="file")
+        dst = h5w.create_dataset(f"{trg}/file_name", data=self.config["config_file_path"])
+        dst = h5w.create_dataset(f"{trg}/checksum", data=get_sha256(self.config["config_file_path"]))
+        dst = h5w.create_dataset(f"{trg}/algorithm", data="sha256")
+
         h5w.close()
 
     def define_voxelization_grid(self, xyz):
@@ -228,12 +237,12 @@ class ProcessPreparation:
         )
         dst.attrs["units"] = "nm"
         dst = h5w.create_dataset(f"{trg}/extent", data=self.extent)
-        identifier_offset = 0  # we count cells starting from this value
+        index_offset = 0  # we count cells starting from this value
         dst = h5w.create_dataset(
-            f"{trg}/identifier_offset", data=np.uint64(identifier_offset)
+            f"{trg}/index_offset", data=np.uint64(index_offset)
         )
 
-        voxel_id = identifier_offset
+        voxel_id = index_offset
         position = np.zeros([c, 3], np.float64)
         for k in np.arange(0, self.extent[2]):
             z = self.aabb3d[2, 0] + (0.5 + k) * dedge
@@ -249,7 +258,7 @@ class ProcessPreparation:
         dst.attrs["units"] = "nm"
         del position
 
-        voxel_id = identifier_offset
+        voxel_id = index_offset
         coordinate = np.zeros([c, 3], np.uint64)
         for k in np.arange(0, self.extent[2]):
             for j in np.arange(0, self.extent[1]):
@@ -286,7 +295,7 @@ class ProcessPreparation:
         h5w = h5py.File(self.config["results_file_path"], "a")
         trg = f"/entry{self.config['entry_id']}/voxelization/cg_grid"
         dst = h5w.create_dataset(
-            f"{trg}/voxel_identifier",
+            f"{trg}/indices_voxel",
             compression="gzip",
             compression_opts=1,
             data=self.voxel_identifier,
@@ -308,12 +317,14 @@ class ProcessPreparation:
                     # alternatively, one could make two loops where in the first an offset lookup table is generated
                     # after this point one can drop the iontype and evap_id columns from the lu_ityp_voxel_id_evap_id lookup table
 
+        atom_types = set()
         for symbol in elem_cnts:
             # atom/molecular ion-type-specific contribution/intensity/count in each voxel/cell
             trg = f"/entry{self.config['entry_id']}/voxelization/element{elem_id[symbol] + 1}"
             print(f"{trg}, {symbol}")
             grp = h5w.create_group(f"{trg}")
             grp.attrs["NX_class"] = "NXion"
+            atom_types.add(str(symbol))
             dst = h5w.create_dataset(f"{trg}/name", data=str(symbol))
             dst = h5w.create_dataset(
                 f"{trg}/weight",
@@ -332,6 +343,17 @@ class ProcessPreparation:
         dst = h5w.create_dataset(
             f"{trg}/weight", compression="gzip", compression_opts=1, data=total_cnts
         )
+
+        # specimen group
+        if "specimen/is_simulation" in self.config:
+            trg = f"/entry{self.config['entry_id']}/specimen"
+            grp = h5w.create_group(f"{trg}")
+            grp.attrs["NX_class"] = "NXsample"
+            if self.config["specimen/is_simulation"] is True:
+                dst = h5w.create_dataset(f"{trg}/is_simulation", data=True)
+            else:
+                dst = h5w.create_dataset(f"{trg}/is_simulation", data=False)
+            dst = h5w.create_dataset(f"{trg}/atom_types", data=str(", ".join(list(atom_types))))
         h5w.close()
 
     def run(self, recon_file_path: str, range_file_path: str):
